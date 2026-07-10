@@ -109,6 +109,11 @@ def _snippet_looks_truncated(text: str) -> bool:
     return len(stripped) < 400
 
 
+def _format_http_error(exc: requests.HTTPError) -> str:
+    status = exc.response.status_code if exc.response is not None else "?"
+    return f"http_{status}"
+
+
 def apply_openalex_fields(row: PaperRow, work: dict[str, Any], stats: EnrichmentStats) -> PaperRow:
     abstract = reconstruct_abstract(work.get("abstract_inverted_index"))
     keywords = keywords_from_work(work)
@@ -146,6 +151,7 @@ def apply_openalex_fields(row: PaperRow, work: dict[str, Any], stats: Enrichment
         scholar_page=row.scholar_page,
         doi=new_doi,
         keywords=new_keywords,
+        openalex_error="",
     )
 
 
@@ -275,24 +281,27 @@ class OpenAlexClient:
                 best = work
         return best
 
-    def lookup_work(self, row: PaperRow) -> dict[str, Any] | None:
+    def lookup_work(self, row: PaperRow) -> tuple[dict[str, Any] | None, str]:
+        """Return (work_or_none, error_code). error_code is empty on success/unmatched."""
         self.stats.looked_up += 1
         try:
             if row.doi.strip():
                 work = self.fetch_by_doi(row.doi)
                 if work is not None:
                     self.stats.matched += 1
-                    return work
+                    return work, ""
             work = self.fetch_by_title(row.title)
             if work is not None:
                 self.stats.matched += 1
-                return work
-        except requests.HTTPError:
+                return work, ""
+        except requests.HTTPError as exc:
             self.stats.errors += 1
-            self.stats.unmatched += 1
-            return None
+            return None, _format_http_error(exc)
+        except requests.RequestException as exc:
+            self.stats.errors += 1
+            return None, f"request_error: {type(exc).__name__}"
         self.stats.unmatched += 1
-        return None
+        return None, ""
 
 
 def enrich_rows(rows: list[PaperRow], client: OpenAlexClient) -> list[PaperRow]:
@@ -302,13 +311,61 @@ def enrich_rows(rows: list[PaperRow], client: OpenAlexClient) -> list[PaperRow]:
         if i == 1 or i % 25 == 0 or i == total:
             print(f"OpenAlex enrichment {i}/{total}...", flush=True)
         try:
-            work = client.lookup_work(row)
-        except Exception:  # noqa: BLE001 - keep harvest alive on enrichment failures
+            work, error = client.lookup_work(row)
+        except Exception as exc:  # noqa: BLE001 - keep harvest alive
             client.stats.errors += 1
-            enriched.append(row)
+            enriched.append(
+                PaperRow(
+                    title=row.title,
+                    year=row.year,
+                    venue=row.venue,
+                    abstract=row.abstract,
+                    citation_count=row.citation_count,
+                    paper_url=row.paper_url,
+                    query=row.query,
+                    scholar_rank=row.scholar_rank,
+                    scholar_page=row.scholar_page,
+                    doi=row.doi,
+                    keywords=row.keywords,
+                    openalex_error=f"unexpected: {type(exc).__name__}: {exc}"[:300],
+                )
+            )
+            continue
+        if error:
+            enriched.append(
+                PaperRow(
+                    title=row.title,
+                    year=row.year,
+                    venue=row.venue,
+                    abstract=row.abstract,
+                    citation_count=row.citation_count,
+                    paper_url=row.paper_url,
+                    query=row.query,
+                    scholar_rank=row.scholar_rank,
+                    scholar_page=row.scholar_page,
+                    doi=row.doi,
+                    keywords=row.keywords,
+                    openalex_error=error,
+                )
+            )
             continue
         if work is None:
-            enriched.append(row)
+            enriched.append(
+                PaperRow(
+                    title=row.title,
+                    year=row.year,
+                    venue=row.venue,
+                    abstract=row.abstract,
+                    citation_count=row.citation_count,
+                    paper_url=row.paper_url,
+                    query=row.query,
+                    scholar_rank=row.scholar_rank,
+                    scholar_page=row.scholar_page,
+                    doi=row.doi,
+                    keywords=row.keywords,
+                    openalex_error="",
+                )
+            )
             continue
         enriched.append(apply_openalex_fields(row, work, client.stats))
     return enriched
@@ -327,13 +384,14 @@ def record_to_paper_row(record: dict[str, str]) -> PaperRow:
         scholar_page=record.get("scholar_page") or "",
         doi=record.get("doi") or "",
         keywords=record.get("keywords") or "",
+        openalex_error=record.get("openalex_error") or "",
     )
 
 
 def enrich_records(
     records: list[dict[str, str]], client: OpenAlexClient
 ) -> list[dict[str, str]]:
-    """Enrich matrix dict rows in place for abstract/keywords/doi fields."""
+    """Enrich matrix dict rows for abstract/keywords/doi and openalex_error."""
     papers = [record_to_paper_row(r) for r in records]
     enriched = enrich_rows(papers, client)
     out: list[dict[str, str]] = []
@@ -342,5 +400,6 @@ def enrich_records(
         updated["abstract"] = paper.abstract
         updated["keywords"] = paper.keywords
         updated["doi"] = paper.doi
+        updated["openalex_error"] = paper.openalex_error
         out.append(updated)
     return out

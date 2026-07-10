@@ -68,6 +68,8 @@ Shared caches: `.cache/serpapi`, `.cache/openalex`, `.cache/openai`.
 - CSV gets `llm_model`; rationales are stored in the OpenAI cache for audit
 - Labels are **drafts** — review `maybe` / `unclear` and spot-check the rest
 
-CSV core columns: `title`, `year`, `venue`, `abstract`, `citation_count`, `paper_url`, `query`, `scholar_rank`, `scholar_page`, `doi`, `keywords`, plus coding columns from YAML.
+CSV core columns: `title`, `year`, `venue`, `abstract`, `citation_count`, `paper_url`, `query`, `scholar_rank`, `scholar_page`, `doi`, `keywords`, `openalex_error`, plus coding columns from YAML.
+
+`openalex_error` is empty on success/unmatched; on API failures it stores a short code like `http_429`.
 
 The CSV is **UTF-8 with BOM** for Excel on Windows.

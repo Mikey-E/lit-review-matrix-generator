@@ -24,6 +24,7 @@ class PaperRow:
     scholar_page: str
     doi: str
     keywords: str
+    openalex_error: str = ""
 
     def to_dict(self) -> dict[str, str]:
         return asdict(self)
@@ -41,6 +42,7 @@ CSV_COLUMNS = [
     "scholar_page",
     "doi",
     "keywords",
+    "openalex_error",
 ]
 
 
@@ -126,4 +128,5 @@ def paper_from_organic(
         scholar_page=str(scholar_page),
         doi=doi,
         keywords=keywords,
+        openalex_error="",
     )
