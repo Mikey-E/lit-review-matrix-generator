@@ -153,16 +153,21 @@ class OpenAlexClient:
     def __init__(
         self,
         *,
+        api_key: str | None = None,
         mailto: str | None = None,
         cache: ResponseCache | None = None,
         min_interval_s: float = 0.2,
         max_retries: int = 4,
         session: requests.Session | None = None,
     ) -> None:
+        self.api_key = (api_key or os.environ.get("OPENALEX_API_KEY", "")).strip() or None
         self.mailto = (mailto or os.environ.get("OPENALEX_MAILTO", "")).strip() or None
         self.cache = cache
-        # Without mailto, stay under anonymous rate limits more conservatively.
-        self.min_interval_s = 1.0 if self.mailto is None and min_interval_s < 1.0 else min_interval_s
+        # Authenticated keys get a large daily budget; anonymous is tiny (~100 credits/day).
+        if self.api_key is None and min_interval_s < 1.0:
+            self.min_interval_s = 1.0
+        else:
+            self.min_interval_s = min_interval_s
         self.max_retries = max_retries
         self.session = session or requests.Session()
         self._last_request_at = 0.0
@@ -175,6 +180,8 @@ class OpenAlexClient:
 
     def _get_json(self, path_or_url: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         params = dict(params or {})
+        if self.api_key:
+            params.setdefault("api_key", self.api_key)
         if self.mailto:
             params.setdefault("mailto", self.mailto)
 
@@ -305,3 +312,35 @@ def enrich_rows(rows: list[PaperRow], client: OpenAlexClient) -> list[PaperRow]:
             continue
         enriched.append(apply_openalex_fields(row, work, client.stats))
     return enriched
+
+
+def record_to_paper_row(record: dict[str, str]) -> PaperRow:
+    return PaperRow(
+        title=record.get("title") or "",
+        year=record.get("year") or "",
+        venue=record.get("venue") or "",
+        abstract=record.get("abstract") or "",
+        citation_count=record.get("citation_count") or "",
+        paper_url=record.get("paper_url") or "",
+        query=record.get("query") or "",
+        scholar_rank=record.get("scholar_rank") or "",
+        scholar_page=record.get("scholar_page") or "",
+        doi=record.get("doi") or "",
+        keywords=record.get("keywords") or "",
+    )
+
+
+def enrich_records(
+    records: list[dict[str, str]], client: OpenAlexClient
+) -> list[dict[str, str]]:
+    """Enrich matrix dict rows in place for abstract/keywords/doi fields."""
+    papers = [record_to_paper_row(r) for r in records]
+    enriched = enrich_rows(papers, client)
+    out: list[dict[str, str]] = []
+    for original, paper in zip(records, enriched, strict=True):
+        updated = dict(original)
+        updated["abstract"] = paper.abstract
+        updated["keywords"] = paper.keywords
+        updated["doi"] = paper.doi
+        out.append(updated)
+    return out

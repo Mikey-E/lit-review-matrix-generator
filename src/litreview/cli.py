@@ -10,7 +10,7 @@ from litreview.cache import ResponseCache
 from litreview.config import load_config
 from litreview.dedupe import Deduper
 from litreview.llm_code import DEFAULT_LLM_MODEL, LlmCoder
-from litreview.openalex import OpenAlexClient, enrich_rows
+from litreview.openalex import OpenAlexClient, enrich_records, enrich_rows
 from litreview.output import (
     build_metadata,
     read_matrix,
@@ -70,6 +70,22 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-cache",
         action="store_true",
         help="Disable on-disk OpenAI response cache.",
+    )
+
+    enrich = sub.add_parser(
+        "enrich",
+        help="Re-run OpenAlex enrichment on an existing matrix CSV (no SerpAPI).",
+    )
+    enrich.add_argument("config", type=Path, help="YAML study config")
+    enrich.add_argument(
+        "matrix",
+        type=Path,
+        help="Path to matrix.csv (or a run directory containing matrix.csv)",
+    )
+    enrich.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Disable on-disk OpenAlex response cache.",
     )
     return parser
 
@@ -205,10 +221,62 @@ def run_code(
     return matrix_path
 
 
+def run_enrich(
+    config_path: Path,
+    matrix_path: Path,
+    *,
+    use_cache: bool = True,
+) -> Path:
+    load_dotenv()
+    config = load_config(config_path)
+    matrix_path = _resolve_matrix_path(matrix_path)
+    records = read_matrix(matrix_path)
+
+    openalex_cache = (
+        ResponseCache(_shared_cache_root() / "openalex") if use_cache else None
+    )
+    openalex = OpenAlexClient(cache=openalex_cache)
+    if openalex.api_key is None:
+        print(
+            "warning: OPENALEX_API_KEY not set; anonymous quota is tiny and may 429.",
+            flush=True,
+        )
+    enriched = enrich_records(records, openalex)
+    write_matrix(matrix_path, enriched, extra_columns=config.coding_columns)
+
+    meta_path = matrix_path.parent / "metadata.yaml"
+    write_metadata(
+        meta_path,
+        build_metadata(
+            config,
+            rows_written=len(enriched),
+            duplicates_dropped=0,
+            api_calls=0,
+            cache_hits=0,
+            run_dir=matrix_path.parent,
+            openalex_stats=openalex.stats,
+            llm_stats=None,
+        ),
+    )
+    print(
+        "OpenAlex stats: "
+        f"matched={openalex.stats.matched} unmatched={openalex.stats.unmatched} "
+        f"abstracts={openalex.stats.abstracts_filled} keywords={openalex.stats.keywords_filled} "
+        f"dois={openalex.stats.dois_filled} api_calls={openalex.stats.api_calls} "
+        f"cache_hits={openalex.stats.cache_hits} errors={openalex.stats.errors}",
+        flush=True,
+    )
+    return matrix_path
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     # Backward compatible: `litreview config.yaml` => harvest
-    if argv and not argv[0].startswith("-") and argv[0] not in {"harvest", "code"}:
+    if argv and not argv[0].startswith("-") and argv[0] not in {
+        "harvest",
+        "code",
+        "enrich",
+    }:
         argv = ["harvest", *argv]
 
     parser = build_parser()
@@ -227,6 +295,16 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(f"Wrote matrix to {run_dir / 'matrix.csv'}")
             print(f"Wrote metadata to {run_dir / 'metadata.yaml'}")
+            return 0
+
+        if args.command == "enrich":
+            matrix_path = run_enrich(
+                args.config,
+                args.matrix,
+                use_cache=not args.no_cache,
+            )
+            print(f"Updated matrix at {matrix_path}")
+            print(f"Wrote metadata to {matrix_path.parent / 'metadata.yaml'}")
             return 0
 
         matrix_path = run_code(
