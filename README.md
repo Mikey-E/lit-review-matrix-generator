@@ -59,6 +59,8 @@ Shared response cache lives in `.cache/serpapi` and `.cache/openalex` so re-runs
 
 CSV columns: `title`, `year`, `venue`, `abstract`, `citation_count`, `paper_url`, `query`, `doi`, `keywords`.
 
+The CSV is written as **UTF-8 with BOM** so Excel on Windows displays ellipses (`…`), dashes, and accents correctly.
+
 Notes:
 
 - Scholar snippets are replaced with OpenAlex abstracts when a match is found and the snippet looks truncated/short.

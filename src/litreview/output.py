@@ -23,7 +23,8 @@ def resolve_run_dir(config: StudyConfig, base: Path | None = None) -> Path:
 
 def write_matrix(path: Path, rows: list[PaperRow]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="") as f:
+    # utf-8-sig adds a BOM so Excel on Windows detects UTF-8 (avoids â€¦ mojibake).
+    with path.open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
         writer.writeheader()
         for row in rows:
