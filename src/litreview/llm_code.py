@@ -223,15 +223,32 @@ class LlmCoder:
     def code_records(self, rows: list[dict[str, str]]) -> list[dict[str, str]]:
         """Stage A all rows, then Stage B per facet for include+maybe only."""
         coded: list[dict[str, str]] = []
-        for row in rows:
+        total = len(rows)
+        print(f"LLM Stage A (screen): {total} rows...", flush=True)
+        for i, row in enumerate(rows, start=1):
             out = dict(row)
             out["llm_model"] = self.model
             out["screen"] = self.screen_row(out)
             self.stats.screened += 1
             coded.append(out)
+            if i == 1 or i % 25 == 0 or i == total:
+                print(
+                    f"  screen {i}/{total} "
+                    f"(api={self.stats.screen_api_calls} cache={self.stats.screen_cache_hits})",
+                    flush=True,
+                )
 
         stage_b_values = {"include", "maybe"}
-        for row in coded:
+        to_code = [
+            r for r in coded
+            if (r.get("screen") or "").strip().casefold() in stage_b_values
+        ]
+        print(
+            f"LLM Stage B (facets): {len(to_code)} include/maybe rows "
+            f"× {len(self.config.facets)} facets...",
+            flush=True,
+        )
+        for i, row in enumerate(coded, start=1):
             screen = (row.get("screen") or "").strip().casefold()
             if screen not in stage_b_values:
                 self.stats.skipped_exclude_for_facets += 1
@@ -241,4 +258,11 @@ class LlmCoder:
             for facet in self.config.facets:
                 row[facet.name] = self.code_facet(row, facet)
                 self.stats.facet_labels += 1
+            done = self.stats.facet_labels // max(len(self.config.facets), 1)
+            if done == 1 or done % 10 == 0 or i == total:
+                print(
+                    f"  facets on {done}/{len(to_code)} papers "
+                    f"(api={self.stats.facet_api_calls} cache={self.stats.facet_cache_hits})",
+                    flush=True,
+                )
         return coded
