@@ -34,6 +34,30 @@ def test_queries_as_strings(tmp_path: Path):
     assert config.max_results == 10
 
 
+def test_load_study_facets_and_screen():
+    path = Path("studies/multimodal-cea-yield-cost.yaml")
+    config = load_config(path)
+    assert config.screen_values == ["include", "exclude", "maybe"]
+    assert [f.name for f in config.facets] == [
+        "modality",
+        "cea_setting",
+        "outcome",
+        "method_family",
+        "evidence_type",
+        "contribution_type",
+    ]
+    assert "method_model" in config.facets[-1].values
+    assert config.coding_columns == [
+        "screen",
+        "modality",
+        "cea_setting",
+        "outcome",
+        "method_family",
+        "evidence_type",
+        "contribution_type",
+    ]
+
+
 def test_requires_queries(tmp_path: Path):
     path = tmp_path / "bad.yaml"
     path.write_text("title: T\nqueries: []\n", encoding="utf-8")

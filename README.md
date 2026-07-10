@@ -36,6 +36,8 @@ See [`examples/sample_study.yaml`](examples/sample_study.yaml). Important fields
 | `year_from` / `year_to` | Passed to Scholar as `as_ylo` / `as_yhi` |
 | `max_pages` / `max_results` | Stop at whichever limit hits first |
 | `queries` | Boolean strings sent to Scholar as `q` (optionally named) |
+| `screen` | Optional allowed values for a manual `screen` CSV column |
+| `facets` | Optional coding facets; each becomes an empty CSV column; allowed values go in metadata |
 
 Minimal smoke test (1 SerpAPI credit): [`examples/smoke_test.yaml`](examples/smoke_test.yaml).
 

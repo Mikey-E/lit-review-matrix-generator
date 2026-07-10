@@ -18,6 +18,12 @@ class QuerySpec:
 
 
 @dataclass
+class FacetSpec:
+    name: str
+    values: list[str]
+
+
+@dataclass
 class StudyConfig:
     title: str
     queries: list[QuerySpec]
@@ -29,6 +35,8 @@ class StudyConfig:
     year_to: int | None = None
     max_pages: int | None = None
     max_results: int | None = None
+    screen_values: list[str] = field(default_factory=list)
+    facets: list[FacetSpec] = field(default_factory=list)
     source_path: Path | None = None
 
     def __post_init__(self) -> None:
@@ -47,6 +55,15 @@ class StudyConfig:
             and self.year_from > self.year_to
         ):
             raise ValueError("year_from cannot be greater than year_to.")
+
+    @property
+    def coding_columns(self) -> list[str]:
+        """Empty Excel-coding columns appended to the matrix CSV."""
+        cols: list[str] = []
+        if self.screen_values:
+            cols.append("screen")
+        cols.extend(facet.name for facet in self.facets)
+        return cols
 
 
 def _require_str(data: dict[str, Any], key: str) -> str:
@@ -84,6 +101,52 @@ def _parse_queries(raw: Any) -> list[QuerySpec]:
     return queries
 
 
+def _parse_value_list(raw: Any, label: str) -> list[str]:
+    if not isinstance(raw, list) or not raw:
+        raise ValueError(f"'{label}' must be a non-empty list of strings.")
+    values: list[str] = []
+    for i, item in enumerate(raw):
+        text = str(item).strip()
+        if not text:
+            raise ValueError(f"'{label}[{i}]' must be a non-empty string.")
+        values.append(text)
+    return values
+
+
+def _parse_screen(raw: Any) -> list[str]:
+    if raw in (None, ""):
+        return []
+    if isinstance(raw, list):
+        return _parse_value_list(raw, "screen")
+    if isinstance(raw, dict):
+        return _parse_value_list(raw.get("values"), "screen.values")
+    raise ValueError("'screen' must be a list of values or a mapping with 'values'.")
+
+
+def _parse_facets(raw: Any) -> list[FacetSpec]:
+    if raw in (None, ""):
+        return []
+    if not isinstance(raw, dict) or not raw:
+        raise ValueError("'facets' must be a mapping of facet name -> spec.")
+    facets: list[FacetSpec] = []
+    for name, spec in raw.items():
+        facet_name = str(name).strip()
+        if not facet_name:
+            raise ValueError("Facet names must be non-empty strings.")
+        if isinstance(spec, list):
+            values = _parse_value_list(spec, f"facets.{facet_name}")
+        elif isinstance(spec, dict):
+            values = _parse_value_list(
+                spec.get("values"), f"facets.{facet_name}.values"
+            )
+        else:
+            raise ValueError(
+                f"facets.{facet_name} must be a value list or a mapping with 'values'."
+            )
+        facets.append(FacetSpec(name=facet_name, values=values))
+    return facets
+
+
 def load_config(path: Path) -> StudyConfig:
     path = path.resolve()
     with path.open(encoding="utf-8") as f:
@@ -108,5 +171,7 @@ def load_config(path: Path) -> StudyConfig:
         year_to=_optional_int(data, "year_to"),
         max_pages=_optional_int(data, "max_pages"),
         max_results=_optional_int(data, "max_results"),
+        screen_values=_parse_screen(data.get("screen")),
+        facets=_parse_facets(data.get("facets")),
         source_path=path,
     )

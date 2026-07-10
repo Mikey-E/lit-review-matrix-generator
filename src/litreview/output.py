@@ -21,14 +21,23 @@ def resolve_run_dir(config: StudyConfig, base: Path | None = None) -> Path:
     return root / f"{slug}-{stamp}"
 
 
-def write_matrix(path: Path, rows: list[PaperRow]) -> None:
+def write_matrix(
+    path: Path,
+    rows: list[PaperRow],
+    *,
+    extra_columns: list[str] | None = None,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = list(CSV_COLUMNS) + list(extra_columns or [])
     # utf-8-sig adds a BOM so Excel on Windows detects UTF-8 (avoids â€¦ mojibake).
     with path.open("w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for row in rows:
-            writer.writerow(row.to_dict())
+            payload = row.to_dict()
+            for col in extra_columns or []:
+                payload.setdefault(col, "")
+            writer.writerow(payload)
 
 
 def write_metadata(path: Path, payload: dict[str, Any]) -> None:
@@ -77,6 +86,12 @@ def build_metadata(
         "max_pages": config.max_pages,
         "max_results": config.max_results,
         "queries": [{"name": q.name, "q": q.q} for q in config.queries],
+        "screen": {"values": list(config.screen_values)} if config.screen_values else None,
+        "facets": (
+            {facet.name: {"values": list(facet.values)} for facet in config.facets}
+            if config.facets
+            else None
+        ),
         "screening": "manual (Excel)",
         "source": "google_scholar",
         "provider": "serpapi",
@@ -92,6 +107,6 @@ def build_metadata(
             "Scholar provides discovery snippets; OpenAlex enrichment fills fuller abstracts when available.",
             "Keywords come from OpenAlex keywords/topics/concepts when Scholar has none.",
             "Missing DOIs are filled from OpenAlex matches (DOI lookup first, then title).",
-            "Inclusion/exclusion criteria are recorded for reference; screening is manual.",
+            "screen and facet columns are left empty for manual Excel coding; allowed values are listed above.",
         ],
     }

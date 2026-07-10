@@ -74,7 +74,7 @@ def run(
         rows = enrich_rows(rows, openalex)
         openalex_stats = openalex.stats
 
-    write_matrix(run_dir / "matrix.csv", rows)
+    write_matrix(run_dir / "matrix.csv", rows, extra_columns=config.coding_columns)
     write_metadata(
         run_dir / "metadata.yaml",
         build_metadata(

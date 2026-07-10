@@ -1,6 +1,6 @@
 # Multimodal AI for yield/cost outcomes in controlled environment agriculture.
 # Harvest: Google Scholar via SerpAPI (relevance rank), then OpenAlex enrichment.
-# Screening remains manual in Excel. max_pages is a retrieval ceiling, not an
+# Screening/coding remains manual in Excel. max_pages is a retrieval ceiling, not an
 # automatic relevance stop — review late pages to decide whether to deepen.
 
 study_id: multimodal-cea-yield-cost
@@ -22,6 +22,62 @@ year_to: 2026
 # Up to 10 relevance-ranked pages per query (~10 hits/page ≈ 100 hits/query).
 # 4 queries → up to ~40 SerpAPI credits before cache hits / early exhaustion.
 max_pages: 10
+
+# Manual title/abstract screening (fill in Excel). Kept separate from facets.
+screen:
+  values:
+    - include
+    - exclude
+    - maybe
+
+# Coding facets (fill in Excel after/during screening). One primary value per facet
+# unless you later decide a facet should allow multi-label (semicolon-separated).
+# These become empty CSV columns on every run; allowed values are copied into metadata.
+facets:
+  modality:
+    values:
+      - rgb+thermal
+      - imagery+sensors
+      - image+text
+      - other_fusion
+      - unclear
+  cea_setting:
+    values:
+      - greenhouse
+      - vertical_farm
+      - hydroponics
+      - general_cea
+      - mixed
+      - unclear
+  outcome:
+    values:
+      - yield
+      - cost
+      - yield_and_cost
+      - proxy_only
+      - unclear
+  method_family:
+    values:
+      - classical_ml
+      - deep_cv
+      - vlm_llm
+      - sensor_fusion_pipeline
+      - hybrid
+      - unclear
+  evidence_type:
+    values:
+      - experiment
+      - simulation_model
+      - both
+      - unclear
+  contribution_type:
+    values:
+      - survey
+      - method_model
+      - dataset
+      - system_application
+      - benchmark_evaluation
+      - unclear
 
 queries:
   - name: multimodal-cea-yield-cost
