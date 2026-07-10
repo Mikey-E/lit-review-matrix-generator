@@ -1,7 +1,7 @@
 # Multimodal AI for yield/cost outcomes in controlled environment agriculture.
 # Harvest: Google Scholar via SerpAPI (relevance rank), then OpenAlex enrichment.
-# Screening/coding remains manual in Excel. max_pages is a retrieval ceiling, not an
-# automatic relevance stop — review late pages to decide whether to deepen.
+# Optional OpenAI draft coding: Stage A screen, Stage B facets for include+maybe.
+# max_pages is a retrieval ceiling, not an automatic relevance stop.
 
 study_id: multimodal-cea-yield-cost
 title: "Multimodal AI for Yield Enhancement and Cost Reduction in Controlled Environment Agriculture"
@@ -23,7 +23,11 @@ year_to: 2026
 # 4 queries → up to ~40 SerpAPI credits before cache hits / early exhaustion.
 max_pages: 10
 
-# Manual title/abstract screening (fill in Excel). Kept separate from facets.
+# Optional OpenAI draft coding (screen + facets). Override with --llm-code / litreview code.
+llm:
+  model: gpt-4o-mini
+
+# Manual title/abstract screening values (LLM Stage A + Excel review).
 screen:
   values:
     - include

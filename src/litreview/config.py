@@ -37,6 +37,7 @@ class StudyConfig:
     max_results: int | None = None
     screen_values: list[str] = field(default_factory=list)
     facets: list[FacetSpec] = field(default_factory=list)
+    llm_model: str | None = None
     source_path: Path | None = None
 
     def __post_init__(self) -> None:
@@ -58,11 +59,13 @@ class StudyConfig:
 
     @property
     def coding_columns(self) -> list[str]:
-        """Empty Excel-coding columns appended to the matrix CSV."""
+        """Excel-coding columns appended to the matrix CSV."""
         cols: list[str] = []
         if self.screen_values:
             cols.append("screen")
         cols.extend(facet.name for facet in self.facets)
+        if self.screen_values or self.facets or self.llm_model:
+            cols.append("llm_model")
         return cols
 
 
@@ -147,6 +150,20 @@ def _parse_facets(raw: Any) -> list[FacetSpec]:
     return facets
 
 
+def _parse_llm_model(raw: Any) -> str | None:
+    if raw in (None, ""):
+        return None
+    if isinstance(raw, str):
+        text = raw.strip()
+        return text or None
+    if isinstance(raw, dict):
+        model = raw.get("model")
+        if model in (None, ""):
+            return None
+        return str(model).strip() or None
+    raise ValueError("'llm' must be a model string or a mapping with 'model'.")
+
+
 def load_config(path: Path) -> StudyConfig:
     path = path.resolve()
     with path.open(encoding="utf-8") as f:
@@ -173,5 +190,6 @@ def load_config(path: Path) -> StudyConfig:
         max_results=_optional_int(data, "max_results"),
         screen_values=_parse_screen(data.get("screen")),
         facets=_parse_facets(data.get("facets")),
+        llm_model=_parse_llm_model(data.get("llm")),
         source_path=path,
     )

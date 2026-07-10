@@ -55,7 +55,9 @@ def test_load_study_facets_and_screen():
         "method_family",
         "evidence_type",
         "contribution_type",
+        "llm_model",
     ]
+    assert config.llm_model == "gpt-4o-mini"
 
 
 def test_requires_queries(tmp_path: Path):

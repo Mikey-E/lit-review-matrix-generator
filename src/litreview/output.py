@@ -23,7 +23,7 @@ def resolve_run_dir(config: StudyConfig, base: Path | None = None) -> Path:
 
 def write_matrix(
     path: Path,
-    rows: list[PaperRow],
+    rows: list[PaperRow] | list[dict[str, str]],
     *,
     extra_columns: list[str] | None = None,
 ) -> None:
@@ -31,13 +31,21 @@ def write_matrix(
     fieldnames = list(CSV_COLUMNS) + list(extra_columns or [])
     # utf-8-sig adds a BOM so Excel on Windows detects UTF-8 (avoids â€¦ mojibake).
     with path.open("w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         for row in rows:
-            payload = row.to_dict()
-            for col in extra_columns or []:
+            if isinstance(row, PaperRow):
+                payload = row.to_dict()
+            else:
+                payload = dict(row)
+            for col in fieldnames:
                 payload.setdefault(col, "")
-            writer.writerow(payload)
+            writer.writerow({k: payload.get(k, "") for k in fieldnames})
+
+
+def read_matrix(path: Path) -> list[dict[str, str]]:
+    with path.open(encoding="utf-8-sig", newline="") as f:
+        return [{k: (v or "") for k, v in row.items()} for row in csv.DictReader(f)]
 
 
 def write_metadata(path: Path, payload: dict[str, Any]) -> None:
@@ -55,6 +63,7 @@ def build_metadata(
     cache_hits: int,
     run_dir: Path,
     openalex_stats: Any | None = None,
+    llm_stats: Any | None = None,
 ) -> dict[str, Any]:
     stats: dict[str, Any] = {
         "rows_written": rows_written,
@@ -72,6 +81,17 @@ def build_metadata(
             "dois_filled": openalex_stats.dois_filled,
             "api_calls": openalex_stats.api_calls,
             "cache_hits": openalex_stats.cache_hits,
+        }
+    if llm_stats is not None:
+        stats["llm"] = {
+            "model": config.llm_model,
+            "screened": llm_stats.screened,
+            "facet_labels": llm_stats.facet_labels,
+            "skipped_exclude_for_facets": llm_stats.skipped_exclude_for_facets,
+            "screen_api_calls": llm_stats.screen_api_calls,
+            "screen_cache_hits": llm_stats.screen_cache_hits,
+            "facet_api_calls": llm_stats.facet_api_calls,
+            "facet_cache_hits": llm_stats.facet_cache_hits,
         }
 
     return {
@@ -92,7 +112,8 @@ def build_metadata(
             if config.facets
             else None
         ),
-        "screening": "manual (Excel)",
+        "llm": {"model": config.llm_model, "provider": "openai"} if config.llm_model or llm_stats else None,
+        "screening": "llm draft + manual Excel review" if llm_stats else "manual (Excel)",
         "source": "google_scholar",
         "provider": "serpapi",
         "enrichment": "openalex" if openalex_stats is not None else None,
@@ -107,6 +128,7 @@ def build_metadata(
             "Scholar provides discovery snippets; OpenAlex enrichment fills fuller abstracts when available.",
             "Keywords come from OpenAlex keywords/topics/concepts when Scholar has none.",
             "Missing DOIs are filled from OpenAlex matches (DOI lookup first, then title).",
-            "screen and facet columns are left empty for manual Excel coding; allowed values are listed above.",
+            "LLM Stage A fills screen; Stage B fills facets only for include+maybe (one facet per call).",
+            "LLM labels are drafts — review maybe/unclear and spot-check include/exclude.",
         ],
     }
