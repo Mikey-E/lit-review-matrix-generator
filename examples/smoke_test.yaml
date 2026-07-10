@@ -1,0 +1,14 @@
+# Minimal smoke test: 1 query × 1 page ≈ 1 SerpAPI search credit.
+study_id: smoke-test
+title: "Smoke test (do not use for real review)"
+
+inclusion_criteria: "n/a — smoke test"
+exclusion_criteria: "n/a — smoke test"
+
+year_from: 2020
+year_to: 2025
+max_pages: 1
+
+queries:
+  - name: smoke
+    q: '"intelligent tutoring system" higher education'
