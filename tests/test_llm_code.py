@@ -33,7 +33,6 @@ class _FakeCompletions:
             payload = {"screen": enum[0], "rationale": "test screen"}
         else:
             payload = {"value": enum[0], "rationale": "test facet"}
-        assert kwargs["temperature"] == 0
         return _FakeResponse(json.dumps(payload))
 
 
@@ -58,7 +57,7 @@ def _config() -> StudyConfig:
             FacetSpec(name="modality", values=["rgb+thermal", "unclear"]),
             FacetSpec(name="outcome", values=["yield", "unclear"]),
         ],
-        llm_model="gpt-4o-mini",
+        llm_model="gpt-5.6-luna",
         max_pages=1,
     )
 
@@ -111,7 +110,7 @@ def test_code_records_screens_then_facets_for_include_only():
     assert coded[0]["screen"] == "include"
     assert coded[0]["modality"] == "rgb+thermal"
     assert coded[0]["outcome"] == "yield"
-    assert coded[0]["llm_model"] == "gpt-4o-mini"
+    assert coded[0]["llm_model"] == "gpt-5.6-luna"
     assert coded[1]["screen"] == "exclude"
     assert coded[1].get("modality", "") == ""
     assert coder.stats.screened == 2

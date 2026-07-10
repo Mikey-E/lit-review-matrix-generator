@@ -12,7 +12,12 @@ from litreview.config import FacetSpec, StudyConfig
 from litreview.models import normalize_title
 
 SCREEN_STAGE = "screen"
-DEFAULT_LLM_MODEL = "gpt-4o-mini"
+DEFAULT_LLM_MODEL = "gpt-5.6-luna"
+
+
+def _supports_temperature(model: str) -> bool:
+    # GPT-5.6 family currently only accepts the default temperature.
+    return not model.startswith("gpt-5.6")
 
 
 @dataclass
@@ -90,14 +95,13 @@ class LlmCoder:
                     self.stats.facet_cache_hits += 1
                 return cached
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            temperature=0,
-            messages=[
+        kwargs: dict[str, Any] = {
+            "model": self.model,
+            "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
-            response_format={
+            "response_format": {
                 "type": "json_schema",
                 "json_schema": {
                     "name": schema_name,
@@ -105,7 +109,11 @@ class LlmCoder:
                     "schema": schema,
                 },
             },
-        )
+        }
+        if _supports_temperature(self.model):
+            kwargs["temperature"] = 0
+
+        response = self.client.chat.completions.create(**kwargs)
         content = response.choices[0].message.content or "{}"
         payload = json.loads(content)
         if not isinstance(payload, dict):

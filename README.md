@@ -38,7 +38,7 @@ See [`studies/multimodal-cea-yield-cost.yaml`](studies/multimodal-cea-yield-cost
 | `queries` | Boolean strings sent to Scholar as `q` (optionally named) |
 | `screen` | Allowed `screen` values |
 | `facets` | Coding facets + allowed values (empty CSV columns; values also in metadata) |
-| `llm.model` | OpenAI model id (default `gpt-4o-mini` if coding without YAML model) |
+| `llm.model` | OpenAI model id (default `gpt-5.6-luna` if coding without YAML model) |
 
 ## Run
 

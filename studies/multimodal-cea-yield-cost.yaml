@@ -25,7 +25,7 @@ max_pages: 10
 
 # Optional OpenAI draft coding (screen + facets). Override with --llm-code / litreview code.
 llm:
-  model: gpt-4o-mini
+  model: gpt-5.6-luna
 
 # Manual title/abstract screening values (LLM Stage A + Excel review).
 screen:
