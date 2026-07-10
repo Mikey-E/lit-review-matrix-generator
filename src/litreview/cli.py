@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from litreview.cache import ResponseCache
 from litreview.config import load_config
 from litreview.dedupe import Deduper
+from litreview.openalex import OpenAlexClient, enrich_rows
 from litreview.output import build_metadata, resolve_run_dir, write_matrix, write_metadata
 from litreview.scholar import ScholarClient
 
@@ -29,19 +30,33 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--no-cache",
         action="store_true",
-        help="Disable reading/writing the on-disk SerpAPI response cache.",
+        help="Disable reading/writing the on-disk API response cache.",
+    )
+    parser.add_argument(
+        "--no-openalex",
+        action="store_true",
+        help="Skip OpenAlex enrichment (abstracts, keywords, missing DOIs).",
     )
     return parser
 
 
-def run(config_path: Path, *, use_cache: bool = True) -> Path:
+def run(
+    config_path: Path,
+    *,
+    use_cache: bool = True,
+    use_openalex: bool = True,
+) -> Path:
     load_dotenv()
     config = load_config(config_path)
     run_dir = resolve_run_dir(config)
     run_dir.mkdir(parents=True, exist_ok=True)
 
-    cache = ResponseCache(run_dir / "cache") if use_cache else None
-    client = ScholarClient(cache=cache)
+    # Shared project cache so re-runs do not re-bill SerpAPI / re-hit OpenAlex.
+    shared_cache_root = Path(".cache")
+    serpapi_cache = (
+        ResponseCache(shared_cache_root / "serpapi") if use_cache else None
+    )
+    client = ScholarClient(cache=serpapi_cache)
     deduper = Deduper()
     rows = []
 
@@ -49,6 +64,15 @@ def run(config_path: Path, *, use_cache: bool = True) -> Path:
         for paper in client.iter_query_results(query, config):
             if deduper.keep(paper):
                 rows.append(paper)
+
+    openalex_stats = None
+    if use_openalex and rows:
+        openalex_cache = (
+            ResponseCache(shared_cache_root / "openalex") if use_cache else None
+        )
+        openalex = OpenAlexClient(cache=openalex_cache)
+        rows = enrich_rows(rows, openalex)
+        openalex_stats = openalex.stats
 
     write_matrix(run_dir / "matrix.csv", rows)
     write_metadata(
@@ -60,6 +84,7 @@ def run(config_path: Path, *, use_cache: bool = True) -> Path:
             api_calls=client.api_calls,
             cache_hits=client.cache_hits,
             run_dir=run_dir,
+            openalex_stats=openalex_stats,
         ),
     )
     return run_dir
@@ -69,7 +94,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
-        run_dir = run(args.config, use_cache=not args.no_cache)
+        run_dir = run(
+            args.config,
+            use_cache=not args.no_cache,
+            use_openalex=not args.no_openalex,
+        )
     except Exception as exc:  # noqa: BLE001 - CLI boundary
         print(f"error: {exc}", file=sys.stderr)
         return 1

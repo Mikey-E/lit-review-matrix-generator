@@ -44,7 +44,26 @@ def build_metadata(
     api_calls: int,
     cache_hits: int,
     run_dir: Path,
+    openalex_stats: Any | None = None,
 ) -> dict[str, Any]:
+    stats: dict[str, Any] = {
+        "rows_written": rows_written,
+        "duplicates_dropped": duplicates_dropped,
+        "serpapi_api_calls": api_calls,
+        "serpapi_cache_hits": cache_hits,
+    }
+    if openalex_stats is not None:
+        stats["openalex"] = {
+            "looked_up": openalex_stats.looked_up,
+            "matched": openalex_stats.matched,
+            "unmatched": openalex_stats.unmatched,
+            "abstracts_filled": openalex_stats.abstracts_filled,
+            "keywords_filled": openalex_stats.keywords_filled,
+            "dois_filled": openalex_stats.dois_filled,
+            "api_calls": openalex_stats.api_calls,
+            "cache_hits": openalex_stats.cache_hits,
+        }
+
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "study_id": config.study_id,
@@ -60,22 +79,18 @@ def build_metadata(
         "screening": "manual (Excel)",
         "source": "google_scholar",
         "provider": "serpapi",
+        "enrichment": "openalex" if openalex_stats is not None else None,
         "run_dir": str(run_dir),
         "files": {
             "matrix_csv": "matrix.csv",
             "metadata": "metadata.yaml",
-            "cache_dir": "cache",
+            "shared_cache_dir": ".cache",
         },
-        "stats": {
-            "rows_written": rows_written,
-            "duplicates_dropped": duplicates_dropped,
-            "serpapi_api_calls": api_calls,
-            "cache_hits": cache_hits,
-        },
+        "stats": stats,
         "notes": [
-            "abstract column is Google Scholar's result snippet (not a full abstract).",
-            "keywords are usually empty from Scholar search results; column reserved for later enrichment.",
-            "DOI is extracted from URLs/snippets when present; often missing.",
+            "Scholar provides discovery snippets; OpenAlex enrichment fills fuller abstracts when available.",
+            "Keywords come from OpenAlex keywords/topics/concepts when Scholar has none.",
+            "Missing DOIs are filled from OpenAlex matches (DOI lookup first, then title).",
             "Inclusion/exclusion criteria are recorded for reference; screening is manual.",
         ],
     }

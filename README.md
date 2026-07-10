@@ -1,22 +1,17 @@
 # Lit-review matrix generator
 
-YAML study instructions in → Google Scholar search → CSV matrix out.
+YAML study instructions in → Google Scholar search → OpenAlex enrichment → CSV matrix out.
 
-## Approach: SerpAPI (recommended)
+## Pipeline
 
-Google Scholar has **no official API**, and DIY scraping (`scholarly`, Playwright, etc.) gets CAPTCHAs and IP blocks quickly.
+1. **Google Scholar via [SerpAPI](https://serpapi.com/google-scholar-api)** — discover papers from your boolean queries
+2. **[OpenAlex](https://openalex.org/)** (free) — fill fuller abstracts, keywords/topics, and missing DOIs
 
-This project uses **[SerpAPI's Google Scholar engine](https://serpapi.com/google-scholar-api)**:
-
-- Structured JSON (title, snippet, venue/year summary, citation counts, links)
-- Handles proxies / CAPTCHAs on their side
-- Billed **per search request (page)**, not per paper — typically ~10 results/page
-- Free tier available to try; paid plans if you run larger reviews
-
-Set your key in `.env` (see `.env.example`):
+SerpAPI is billed **per search page** (~10 results). OpenAlex is free; set `OPENALEX_MAILTO` for their polite pool.
 
 ```bash
 SERPAPI_API_KEY=...
+OPENALEX_MAILTO=you@example.com   # optional but recommended
 ```
 
 ## Install
@@ -42,27 +37,34 @@ See [`examples/sample_study.yaml`](examples/sample_study.yaml). Important fields
 | `max_pages` / `max_results` | Stop at whichever limit hits first |
 | `queries` | Boolean strings sent to Scholar as `q` (optionally named) |
 
+Minimal smoke test (1 SerpAPI credit): [`examples/smoke_test.yaml`](examples/smoke_test.yaml).
+
 ## Run
 
 ```bash
-litreview examples/sample_study.yaml
+litreview examples/smoke_test.yaml
 # or
 python -m litreview examples/sample_study.yaml
+
+# Scholar only (skip OpenAlex):
+litreview examples/smoke_test.yaml --no-openalex
 ```
 
 Each run writes a folder like `outputs/<study_id>-<timestamp>/` containing:
 
 - `matrix.csv` — open in Excel
 - `metadata.yaml` — study instructions + run stats
-- `cache/` — raw SerpAPI JSON pages (re-runs reuse these and avoid re-billing)
+
+Shared response cache lives in `.cache/serpapi` and `.cache/openalex` so re-runs avoid re-billing / re-fetching.
 
 CSV columns: `title`, `year`, `venue`, `abstract`, `citation_count`, `paper_url`, `query`, `doi`, `keywords`.
 
 Notes:
 
-- **abstract** is Scholar’s result snippet (not a full abstract).
-- **DOI** is extracted from URLs/snippets when present; often missing.
-- **keywords** are usually empty from Scholar search hits; column kept for later enrichment.
+- Scholar snippets are replaced with OpenAlex abstracts when a match is found and the snippet looks truncated/short.
+- Keywords come from OpenAlex (`keywords`, else `topics`, else `concepts`).
+- Missing DOIs are filled from OpenAlex (DOI lookup first, then title match).
+- Coverage is imperfect — some papers won’t match or won’t have abstracts.
 - Duplicates are dropped as soon as a matching **normalized title** or **DOI** appears (first hit wins).
 
 ## Screening

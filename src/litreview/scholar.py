@@ -30,13 +30,15 @@ class ScholarClient:
         self.cache_hits = 0
 
     def _fetch_page(self, params: dict[str, Any]) -> dict[str, Any]:
+        # GoogleSearch may mutate its params dict; keep a stable copy for cache keys.
+        cache_params = dict(params)
         if self.cache is not None:
-            cached = self.cache.get(params)
+            cached = self.cache.get(cache_params)
             if cached is not None:
                 self.cache_hits += 1
                 return cached
 
-        search = GoogleSearch(params)
+        search = GoogleSearch(dict(params))
         payload = search.get_dict()
         if not isinstance(payload, dict):
             raise RuntimeError("Unexpected SerpAPI response type.")
@@ -45,7 +47,7 @@ class ScholarClient:
 
         self.api_calls += 1
         if self.cache is not None:
-            self.cache.put(params, payload)
+            self.cache.put(cache_params, payload)
         return payload
 
     def iter_query_results(

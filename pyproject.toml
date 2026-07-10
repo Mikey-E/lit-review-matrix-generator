@@ -12,6 +12,7 @@ dependencies = [
   "google-search-results>=2.4.2",
   "PyYAML>=6.0",
   "python-dotenv>=1.0.0",
+  "requests>=2.31.0",
 ]
 
 [project.optional-dependencies]
