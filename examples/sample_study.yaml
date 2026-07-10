@@ -1,0 +1,31 @@
+# Example lit-review instructions for Google Scholar search.
+# Run: litreview examples/sample_study.yaml
+
+study_id: sample-ai-tutoring
+title: "AI Tutoring Systems in Higher Education (tentative)"
+
+# Optional. Defaults to outputs/<study_id or timestamp>/
+# output_dir: outputs/sample-ai-tutoring
+
+inclusion_criteria: |
+  Empirical studies of AI or intelligent tutoring systems used with
+  undergraduate or graduate students. Peer-reviewed journal or conference papers.
+
+exclusion_criteria: |
+  K-12 only populations. Opinion pieces, editorials, or pure tool demos
+  with no learning outcomes. Non-English papers.
+
+year_from: 2018
+year_to: 2025
+
+# Stop when either limit is hit (whichever comes first).
+# Scholar returns ~10 results per page via SerpAPI (num=10).
+max_pages: 2
+# max_results: 20
+
+# Boolean strings are passed to Google Scholar as-is (q=...).
+queries:
+  - name: its-higher-ed
+    q: '"intelligent tutoring system" OR "AI tutor" "higher education"'
+  - name: llm-tutoring
+    q: '("large language model" OR ChatGPT) tutoring OR "AI tutoring" university OR college'
