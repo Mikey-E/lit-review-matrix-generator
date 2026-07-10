@@ -25,10 +25,14 @@ def write_matrix(
     path: Path,
     rows: list[PaperRow] | list[dict[str, str]],
     *,
+    columns: list[str] | None = None,
     extra_columns: list[str] | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = list(CSV_COLUMNS) + list(extra_columns or [])
+    if columns is not None:
+        fieldnames = list(columns)
+    else:
+        fieldnames = list(CSV_COLUMNS) + list(extra_columns or [])
     # utf-8-sig adds a BOM so Excel on Windows detects UTF-8 (avoids â€¦ mojibake).
     with path.open("w", encoding="utf-8-sig", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")

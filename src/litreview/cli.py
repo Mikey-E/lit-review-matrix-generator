@@ -173,7 +173,7 @@ def run_harvest(
     if llm_code:
         _ensure_llm_model(config)
 
-    write_matrix(run_dir / "matrix.csv", output_rows, extra_columns=config.coding_columns)
+    write_matrix(run_dir / "matrix.csv", output_rows, columns=config.matrix_columns)
     write_metadata(
         run_dir / "metadata.yaml",
         build_metadata(
@@ -202,7 +202,7 @@ def run_code(
     matrix_path = _resolve_matrix_path(matrix_path)
     records = read_matrix(matrix_path)
     coded, llm_stats = _run_llm_coding(config, records, use_cache=use_cache)
-    write_matrix(matrix_path, coded, extra_columns=config.coding_columns)
+    write_matrix(matrix_path, coded, columns=config.matrix_columns)
 
     meta_path = matrix_path.parent / "metadata.yaml"
     write_metadata(
@@ -242,7 +242,7 @@ def run_enrich(
             flush=True,
         )
     enriched = enrich_records(records, openalex)
-    write_matrix(matrix_path, enriched, extra_columns=config.coding_columns)
+    write_matrix(matrix_path, enriched, columns=config.matrix_columns)
 
     meta_path = matrix_path.parent / "metadata.yaml"
     write_metadata(

@@ -57,6 +57,7 @@ def test_load_study_facets_and_screen():
         "contribution_type",
         "llm_model",
     ]
+    assert config.matrix_columns[:4] == ["title", "screen", "abstract", "year"]
     assert config.llm_model == "gpt-4o-mini"
 
 

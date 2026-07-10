@@ -59,10 +59,36 @@ class StudyConfig:
 
     @property
     def coding_columns(self) -> list[str]:
-        """Excel-coding columns appended to the matrix CSV."""
+        """Manual/LLM coding fields (screen, facets, llm_model)."""
         cols: list[str] = []
         if self.screen_values:
             cols.append("screen")
+        cols.extend(facet.name for facet in self.facets)
+        if self.screen_values or self.facets or self.llm_model:
+            cols.append("llm_model")
+        return cols
+
+    @property
+    def matrix_columns(self) -> list[str]:
+        """Full CSV column order for written matrices."""
+        cols = ["title"]
+        if self.screen_values:
+            cols.append("screen")
+        cols.extend(
+            [
+                "abstract",
+                "year",
+                "venue",
+                "citation_count",
+                "paper_url",
+                "query",
+                "scholar_rank",
+                "scholar_page",
+                "doi",
+                "keywords",
+                "openalex_error",
+            ]
+        )
         cols.extend(facet.name for facet in self.facets)
         if self.screen_values or self.facets or self.llm_model:
             cols.append("llm_model")
