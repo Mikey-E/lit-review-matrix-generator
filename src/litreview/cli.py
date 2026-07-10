@@ -120,9 +120,16 @@ def run_harvest(
     rows = []
 
     for query in config.queries:
+        print(f"Scholar query: {query.label}", flush=True)
         for paper in client.iter_query_results(query, config):
             if deduper.keep(paper):
                 rows.append(paper)
+    print(
+        f"Scholar done: {len(rows)} unique rows "
+        f"({client.api_calls} API calls, {client.cache_hits} cache hits, "
+        f"{deduper.dropped} dupes dropped)",
+        flush=True,
+    )
 
     openalex_stats = None
     if use_openalex and rows:

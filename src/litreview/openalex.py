@@ -25,6 +25,7 @@ class EnrichmentStats:
     cache_hits: int = 0
     api_calls: int = 0
     unmatched: int = 0
+    errors: int = 0
 
 
 def reconstruct_abstract(inverted: dict[str, Any] | None) -> str:
@@ -154,12 +155,15 @@ class OpenAlexClient:
         *,
         mailto: str | None = None,
         cache: ResponseCache | None = None,
-        min_interval_s: float = 0.1,
+        min_interval_s: float = 0.2,
+        max_retries: int = 4,
         session: requests.Session | None = None,
     ) -> None:
         self.mailto = (mailto or os.environ.get("OPENALEX_MAILTO", "")).strip() or None
         self.cache = cache
-        self.min_interval_s = min_interval_s
+        # Without mailto, stay under anonymous rate limits more conservatively.
+        self.min_interval_s = 1.0 if self.mailto is None and min_interval_s < 1.0 else min_interval_s
+        self.max_retries = max_retries
         self.session = session or requests.Session()
         self._last_request_at = 0.0
         self.stats = EnrichmentStats()
@@ -186,18 +190,43 @@ class OpenAlexClient:
                 self.stats.cache_hits += 1
                 return cached
 
-        self._throttle()
         headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
-        response = self.session.get(url, params=params, headers=headers, timeout=30)
-        self._last_request_at = time.monotonic()
-        response.raise_for_status()
-        payload = response.json()
-        if not isinstance(payload, dict):
-            raise RuntimeError("Unexpected OpenAlex response type.")
-        self.stats.api_calls += 1
-        if self.cache is not None:
-            self.cache.put(cache_params, payload)
-        return payload
+        last_error: Exception | None = None
+        for attempt in range(self.max_retries):
+            self._throttle()
+            response = self.session.get(url, params=params, headers=headers, timeout=30)
+            self._last_request_at = time.monotonic()
+            if response.status_code == 429:
+                retry_after = response.headers.get("Retry-After")
+                try:
+                    delay = float(retry_after) if retry_after else min(8.0, 2.0 ** attempt)
+                except ValueError:
+                    delay = min(8.0, 2.0 ** attempt)
+                delay = min(delay, 8.0)
+                time.sleep(delay)
+                last_error = requests.HTTPError(
+                    f"429 Too Many Requests for url: {response.url}",
+                    response=response,
+                )
+                continue
+            try:
+                response.raise_for_status()
+            except requests.HTTPError as exc:
+                last_error = exc
+                if response.status_code >= 500 and attempt + 1 < self.max_retries:
+                    time.sleep(min(30.0, 2.0 ** attempt))
+                    continue
+                raise
+            payload = response.json()
+            if not isinstance(payload, dict):
+                raise RuntimeError("Unexpected OpenAlex response type.")
+            self.stats.api_calls += 1
+            if self.cache is not None:
+                self.cache.put(cache_params, payload)
+            return payload
+
+        assert last_error is not None
+        raise last_error
 
     def fetch_by_doi(self, doi: str) -> dict[str, Any] | None:
         doi = doi.strip()
@@ -241,23 +270,36 @@ class OpenAlexClient:
 
     def lookup_work(self, row: PaperRow) -> dict[str, Any] | None:
         self.stats.looked_up += 1
-        if row.doi.strip():
-            work = self.fetch_by_doi(row.doi)
+        try:
+            if row.doi.strip():
+                work = self.fetch_by_doi(row.doi)
+                if work is not None:
+                    self.stats.matched += 1
+                    return work
+            work = self.fetch_by_title(row.title)
             if work is not None:
                 self.stats.matched += 1
                 return work
-        work = self.fetch_by_title(row.title)
-        if work is not None:
-            self.stats.matched += 1
-            return work
+        except requests.HTTPError:
+            self.stats.errors += 1
+            self.stats.unmatched += 1
+            return None
         self.stats.unmatched += 1
         return None
 
 
 def enrich_rows(rows: list[PaperRow], client: OpenAlexClient) -> list[PaperRow]:
     enriched: list[PaperRow] = []
-    for row in rows:
-        work = client.lookup_work(row)
+    total = len(rows)
+    for i, row in enumerate(rows, start=1):
+        if i == 1 or i % 25 == 0 or i == total:
+            print(f"OpenAlex enrichment {i}/{total}...", flush=True)
+        try:
+            work = client.lookup_work(row)
+        except Exception:  # noqa: BLE001 - keep harvest alive on enrichment failures
+            client.stats.errors += 1
+            enriched.append(row)
+            continue
         if work is None:
             enriched.append(row)
             continue

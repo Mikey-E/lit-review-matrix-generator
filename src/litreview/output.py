@@ -81,6 +81,7 @@ def build_metadata(
             "dois_filled": openalex_stats.dois_filled,
             "api_calls": openalex_stats.api_calls,
             "cache_hits": openalex_stats.cache_hits,
+            "errors": getattr(openalex_stats, "errors", 0),
         }
     if llm_stats is not None:
         stats["llm"] = {
