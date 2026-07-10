@@ -1,0 +1,37 @@
+# Multimodal AI for yield/cost outcomes in controlled environment agriculture.
+# Harvest: Google Scholar via SerpAPI (relevance rank), then OpenAlex enrichment.
+# Screening remains manual in Excel. max_pages is a retrieval ceiling, not an
+# automatic relevance stop — review late pages to decide whether to deepen.
+
+study_id: multimodal-cea-yield-cost
+title: "Multimodal AI for Yield Enhancement and Cost Reduction in Controlled Environment Agriculture"
+
+inclusion_criteria: |
+  Peer-reviewed papers or preprints (2015+) on multimodal AI/ML
+  (≥ 2 modalities, e.g., RGB+thermal, imagery+sensors, image+text)
+  in controlled environment agriculture (CEA) for yield and/or cost outcomes,
+  with quantitative measurements or modeling versus baselines.
+
+exclusion_criteria: |
+  Text-only models; non-agriculture settings; no yield or cost metrics;
+  pure theory or reviews without data; non-English; published before 2015.
+
+year_from: 2015
+year_to: 2026
+
+# Up to 10 relevance-ranked pages per query (~10 hits/page ≈ 100 hits/query).
+# 4 queries → up to ~40 SerpAPI credits before cache hits / early exhaustion.
+max_pages: 10
+
+queries:
+  - name: multimodal-cea-yield-cost
+    q: '("multimodal" OR "multi-modal") AND ("controlled environment agriculture" OR CEA OR greenhouse OR hydroponics OR "vertical farming") AND (yield OR cost) AND (AI OR ML OR "machine learning")'
+
+  - name: sensor-fusion-cea
+    q: '("sensor fusion" OR "data fusion") AND ("controlled environment" OR CEA) AND (yield OR productivity OR cost) AND ("computer vision" OR CNN OR "deep learning")'
+
+  - name: vision-language-cea
+    q: '("vision-language" OR VLM OR "multimodal LLM") AND (CEA OR greenhouse) AND (yield OR cost) AND agriculture'
+
+  - name: multimodal-cea-short
+    q: '"multimodal" AND CEA AND (yield OR cost) AND (AI OR "deep learning")'
