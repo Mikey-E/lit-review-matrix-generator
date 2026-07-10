@@ -89,8 +89,13 @@ class ScholarClient:
             for item in organic:
                 if not isinstance(item, dict):
                     continue
-                yield paper_from_organic(item, query.label)
                 collected += 1
+                yield paper_from_organic(
+                    item,
+                    query.label,
+                    scholar_rank=collected,
+                    scholar_page=page + 1,
+                )
                 if config.max_results is not None and collected >= config.max_results:
                     return
 

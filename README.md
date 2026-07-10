@@ -57,7 +57,9 @@ Each run writes a folder like `outputs/<study_id>-<timestamp>/` containing:
 
 Shared response cache lives in `.cache/serpapi` and `.cache/openalex` so re-runs avoid re-billing / re-fetching.
 
-CSV columns: `title`, `year`, `venue`, `abstract`, `citation_count`, `paper_url`, `query`, `doi`, `keywords`.
+CSV columns: `title`, `year`, `venue`, `abstract`, `citation_count`, `paper_url`, `query`, `scholar_rank`, `scholar_page`, `doi`, `keywords`.
+
+`scholar_rank` is 1-based position within that query’s relevance-ranked results; `scholar_page` is `((rank - 1) // 10) + 1`. After dedupe, the kept row keeps the rank/page from the **first** query that found it.
 
 The CSV is written as **UTF-8 with BOM** so Excel on Windows displays ellipses (`…`), dashes, and accents correctly.
 

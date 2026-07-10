@@ -20,6 +20,8 @@ class PaperRow:
     citation_count: str
     paper_url: str
     query: str
+    scholar_rank: str
+    scholar_page: str
     doi: str
     keywords: str
 
@@ -35,6 +37,8 @@ CSV_COLUMNS = [
     "citation_count",
     "paper_url",
     "query",
+    "scholar_rank",
+    "scholar_page",
     "doi",
     "keywords",
 ]
@@ -81,7 +85,13 @@ def parse_publication_summary(summary: str | None) -> tuple[str, str]:
     return year, venue
 
 
-def paper_from_organic(result: dict, query_label: str) -> PaperRow:
+def paper_from_organic(
+    result: dict,
+    query_label: str,
+    *,
+    scholar_rank: int,
+    scholar_page: int,
+) -> PaperRow:
     title = str(result.get("title") or "").strip()
     link = str(result.get("link") or "").strip()
     snippet = str(result.get("snippet") or "").strip()
@@ -112,6 +122,8 @@ def paper_from_organic(result: dict, query_label: str) -> PaperRow:
         citation_count=citation_count,
         paper_url=link,
         query=query_label,
+        scholar_rank=str(scholar_rank),
+        scholar_page=str(scholar_page),
         doi=doi,
         keywords=keywords,
     )

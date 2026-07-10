@@ -39,6 +39,8 @@ def test_apply_openalex_fills_missing_fields():
         citation_count="3",
         paper_url="http://example.com",
         query="q1",
+        scholar_rank="12",
+        scholar_page="2",
         doi="",
         keywords="",
     )
@@ -68,6 +70,8 @@ def test_apply_openalex_fills_missing_fields():
     assert enriched.doi == "10.1000/xyz"
     assert "full abstract" in enriched.abstract
     assert enriched.keywords == "ITS; higher education"
+    assert enriched.scholar_rank == "12"
+    assert enriched.scholar_page == "2"
     assert stats.dois_filled == 1
     assert stats.abstracts_filled == 1
     assert stats.keywords_filled == 1
@@ -82,6 +86,8 @@ def test_apply_openalex_does_not_overwrite_existing_doi_or_keywords():
         citation_count="3",
         paper_url="http://example.com",
         query="q1",
+        scholar_rank="1",
+        scholar_page="1",
         doi="10.1/keep",
         keywords="keep-me",
     )

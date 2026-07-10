@@ -141,6 +141,8 @@ def apply_openalex_fields(row: PaperRow, work: dict[str, Any], stats: Enrichment
         citation_count=row.citation_count,
         paper_url=row.paper_url,
         query=row.query,
+        scholar_rank=row.scholar_rank,
+        scholar_page=row.scholar_page,
         doi=new_doi,
         keywords=new_keywords,
     )

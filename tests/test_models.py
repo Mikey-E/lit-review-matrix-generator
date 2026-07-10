@@ -43,60 +43,61 @@ def test_paper_from_organic():
         },
         "inline_links": {"cited_by": {"total": 42}},
     }
-    row = paper_from_organic(result, "q1")
+    row = paper_from_organic(
+        result, "q1", scholar_rank=11, scholar_page=2
+    )
     assert row.title == "A Study of Tutors"
     assert row.year == "2021"
     assert row.venue == "Computers & Education"
     assert row.citation_count == "42"
     assert row.doi == "10.1000/xyz123"
     assert row.query == "q1"
+    assert row.scholar_rank == "11"
+    assert row.scholar_page == "2"
 
 
-def test_dedupe_by_title_and_doi():
-    deduper = Deduper()
-    a = PaperRow(
-        title="Same Title",
+def _row(**overrides: str) -> PaperRow:
+    base = dict(
+        title="T",
         year="2020",
         venue="",
         abstract="",
         citation_count="1",
         paper_url="http://a",
         query="q1",
+        scholar_rank="1",
+        scholar_page="1",
         doi="",
         keywords="",
     )
-    b = PaperRow(
+    base.update(overrides)
+    return PaperRow(**base)
+
+
+def test_dedupe_by_title_and_doi():
+    deduper = Deduper()
+    a = _row(title="Same Title", citation_count="1", paper_url="http://a", query="q1")
+    b = _row(
         title="same title!",
         year="2021",
-        venue="",
-        abstract="",
         citation_count="2",
         paper_url="http://b",
         query="q2",
-        doi="",
-        keywords="",
+        scholar_rank="5",
+        scholar_page="1",
     )
-    c = PaperRow(
+    c = _row(
         title="Other",
-        year="2020",
-        venue="",
-        abstract="",
         citation_count="3",
         paper_url="http://c",
-        query="q1",
         doi="10.1/abc",
-        keywords="",
     )
-    d = PaperRow(
+    d = _row(
         title="Different Title",
-        year="2020",
-        venue="",
-        abstract="",
         citation_count="4",
         paper_url="http://d",
         query="q2",
         doi="10.1/ABC",
-        keywords="",
     )
     assert deduper.keep(a) is True
     assert deduper.keep(b) is False
