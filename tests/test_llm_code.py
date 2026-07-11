@@ -1,6 +1,6 @@
 import json
 
-from litreview.config import FacetSpec, StudyConfig, QuerySpec
+from litreview.config import SCREEN_COLUMN, FacetSpec, StudyConfig, QuerySpec
 from litreview.llm_code import LlmCoder
 
 
@@ -107,11 +107,11 @@ def test_code_records_screens_then_facets_for_include_only():
     completions.create = create  # type: ignore[method-assign]
 
     coded = coder.code_records(rows)
-    assert coded[0]["screen"] == "include"
+    assert coded[0][SCREEN_COLUMN] == "include"
     assert coded[0]["modality"] == "rgb+thermal"
     assert coded[0]["outcome"] == "yield"
     assert coded[0]["llm_model"] == "gpt-5.6-luna"
-    assert coded[1]["screen"] == "exclude"
+    assert coded[1][SCREEN_COLUMN] == "exclude"
     assert coded[1].get("modality", "") == ""
     assert coder.stats.screened == 2
     assert coder.stats.facet_labels == 2
@@ -127,6 +127,7 @@ def test_code_records_skips_existing_screen_and_facets():
             "title": "Already coded include",
             "year": "2022",
             "abstract": "RGB and thermal yield model.",
+            # Legacy column name still recognized when reading.
             "screen": "include",
             "modality": "rgb+thermal",
             "outcome": "yield",
@@ -139,9 +140,9 @@ def test_code_records_skips_existing_screen_and_facets():
         },
     ]
     coded = coder.code_records(rows)
-    assert coded[0]["screen"] == "include"
+    assert coded[0][SCREEN_COLUMN] == "include"
     assert coded[0]["modality"] == "rgb+thermal"
-    assert coded[1]["screen"] == "include"  # fake picks enum[0]
+    assert coded[1][SCREEN_COLUMN] == "include"  # fake picks enum[0]
     assert coded[1]["modality"] == "rgb+thermal"
     assert coder.stats.screen_skipped_existing == 1
     assert coder.stats.screened == 1

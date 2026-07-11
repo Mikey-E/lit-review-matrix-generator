@@ -133,7 +133,7 @@ def build_metadata(
             "Scholar provides discovery snippets; OpenAlex enrichment fills fuller abstracts when available.",
             "Keywords come from OpenAlex keywords/topics/concepts when Scholar has none.",
             "Missing DOIs are filled from OpenAlex matches (DOI lookup first, then title).",
-            "LLM Stage A fills screen; Stage B fills facets only for include+maybe (one facet per call).",
+            "LLM Stage A fills include/exclude; Stage B fills facets only for include+maybe (one facet per call).",
             "LLM labels are drafts — review maybe/unclear and spot-check include/exclude.",
         ],
     }

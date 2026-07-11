@@ -6,6 +6,10 @@ from typing import Any
 
 import yaml
 
+# Matrix CSV column for Stage A include/exclude/maybe decisions.
+# YAML config key remains `screen:` for study configs.
+SCREEN_COLUMN = "include/exclude"
+
 
 @dataclass
 class QuerySpec:
@@ -59,10 +63,10 @@ class StudyConfig:
 
     @property
     def coding_columns(self) -> list[str]:
-        """Manual/LLM coding fields (screen, facets, llm_model)."""
+        """Manual/LLM coding fields (include/exclude, facets, llm_model)."""
         cols: list[str] = []
         if self.screen_values:
-            cols.append("screen")
+            cols.append(SCREEN_COLUMN)
         cols.extend(facet.name for facet in self.facets)
         if self.screen_values or self.facets or self.llm_model:
             cols.append("llm_model")
@@ -73,7 +77,7 @@ class StudyConfig:
         """Full CSV column order for written matrices."""
         cols = ["title"]
         if self.screen_values:
-            cols.append("screen")
+            cols.append(SCREEN_COLUMN)
         cols.extend(
             [
                 "abstract",

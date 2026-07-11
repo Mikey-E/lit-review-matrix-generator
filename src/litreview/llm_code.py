@@ -8,7 +8,7 @@ from typing import Any
 from openai import OpenAI
 
 from litreview.cache import ResponseCache
-from litreview.config import FacetSpec, StudyConfig
+from litreview.config import SCREEN_COLUMN, FacetSpec, StudyConfig
 from litreview.models import normalize_title
 
 SCREEN_STAGE = "screen"
@@ -231,7 +231,8 @@ class LlmCoder:
         return value
 
     def _existing_screen(self, row: dict[str, str]) -> str:
-        value = (row.get("screen") or "").strip()
+        # Prefer the current column; accept legacy "screen" on older matrices.
+        value = (row.get(SCREEN_COLUMN) or row.get("screen") or "").strip()
         allowed = {v.casefold(): v for v in self.config.screen_values}
         key = value.casefold()
         if key in allowed:
@@ -239,28 +240,28 @@ class LlmCoder:
         return ""
 
     def code_records(self, rows: list[dict[str, str]]) -> list[dict[str, str]]:
-        """Stage A for rows missing screen, then Stage B facets for include+maybe."""
+        """Stage A for rows missing include/exclude, then Stage B for include+maybe."""
         coded: list[dict[str, str]] = []
         total = len(rows)
         need_screen = sum(1 for r in rows if not self._existing_screen(r))
         print(
-            f"LLM Stage A (screen): {need_screen}/{total} rows need coding...",
+            f"LLM Stage A ({SCREEN_COLUMN}): {need_screen}/{total} rows need coding...",
             flush=True,
         )
         for i, row in enumerate(rows, start=1):
             out = dict(row)
             existing = self._existing_screen(out)
             if existing:
-                out["screen"] = existing
+                out[SCREEN_COLUMN] = existing
                 self.stats.screen_skipped_existing += 1
             else:
                 out["llm_model"] = self.model
-                out["screen"] = self.screen_row(out)
+                out[SCREEN_COLUMN] = self.screen_row(out)
                 self.stats.screened += 1
             coded.append(out)
             if i == 1 or i % 25 == 0 or i == total:
                 print(
-                    f"  screen {i}/{total} "
+                    f"  {SCREEN_COLUMN} {i}/{total} "
                     f"(new={self.stats.screened} "
                     f"kept={self.stats.screen_skipped_existing} "
                     f"api={self.stats.screen_api_calls} "
@@ -271,7 +272,7 @@ class LlmCoder:
         stage_b_values = {"include", "maybe"}
         to_code = [
             r for r in coded
-            if (r.get("screen") or "").strip().casefold() in stage_b_values
+            if (r.get(SCREEN_COLUMN) or "").strip().casefold() in stage_b_values
             and any(not (r.get(f.name) or "").strip() for f in self.config.facets)
         ]
         print(
@@ -281,7 +282,7 @@ class LlmCoder:
         )
         papers_faceted = 0
         for i, row in enumerate(coded, start=1):
-            screen = (row.get("screen") or "").strip().casefold()
+            screen = (row.get(SCREEN_COLUMN) or "").strip().casefold()
             if screen not in stage_b_values:
                 self.stats.skipped_exclude_for_facets += 1
                 for facet in self.config.facets:
