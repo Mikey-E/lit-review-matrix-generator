@@ -22,6 +22,7 @@ class EnrichmentStats:
     abstracts_filled: int = 0
     keywords_filled: int = 0
     dois_filled: int = 0
+    venues_filled: int = 0
     cache_hits: int = 0
     api_calls: int = 0
     unmatched: int = 0
@@ -99,6 +100,37 @@ def doi_from_work(work: dict[str, Any]) -> str:
     return extract_doi(str(work.get("doi") or ""), str(work.get("ids", {}).get("doi") or ""))
 
 
+def venue_from_work(work: dict[str, Any]) -> str:
+    """Best available venue/journal name from an OpenAlex work payload."""
+
+    def _source_name(source: Any) -> str:
+        if isinstance(source, dict):
+            return str(source.get("display_name") or "").strip()
+        return ""
+
+    primary = work.get("primary_location")
+    if isinstance(primary, dict):
+        name = _source_name(primary.get("source"))
+        if name:
+            return name
+
+    host = work.get("host_venue")
+    if isinstance(host, dict):
+        name = str(host.get("display_name") or "").strip()
+        if name:
+            return name
+
+    locations = work.get("locations")
+    if isinstance(locations, list):
+        for loc in locations:
+            if not isinstance(loc, dict):
+                continue
+            name = _source_name(loc.get("source"))
+            if name:
+                return name
+    return ""
+
+
 def _snippet_looks_truncated(text: str) -> bool:
     stripped = text.strip()
     if not stripped:
@@ -107,6 +139,14 @@ def _snippet_looks_truncated(text: str) -> bool:
         return True
     # Scholar snippets are typically short; prefer OpenAlex when clearly longer.
     return len(stripped) < 400
+
+
+def _venue_needs_enrichment(venue: str) -> bool:
+    """True when Scholar left venue empty or truncated with an ellipsis."""
+    stripped = venue.strip()
+    if not stripped:
+        return True
+    return stripped.endswith("…") or stripped.endswith("...")
 
 
 def _format_http_error(exc: requests.HTTPError) -> str:
@@ -118,10 +158,12 @@ def apply_openalex_fields(row: PaperRow, work: dict[str, Any], stats: Enrichment
     abstract = reconstruct_abstract(work.get("abstract_inverted_index"))
     keywords = keywords_from_work(work)
     doi = doi_from_work(work)
+    venue = venue_from_work(work)
 
     new_abstract = row.abstract
     new_keywords = row.keywords
     new_doi = row.doi
+    new_venue = row.venue
 
     if abstract and _snippet_looks_truncated(row.abstract):
         if abstract != row.abstract:
@@ -139,10 +181,14 @@ def apply_openalex_fields(row: PaperRow, work: dict[str, Any], stats: Enrichment
         new_doi = doi
         stats.dois_filled += 1
 
+    if venue and _venue_needs_enrichment(row.venue) and venue != row.venue.strip():
+        new_venue = venue
+        stats.venues_filled += 1
+
     return PaperRow(
         title=row.title,
         year=row.year,
-        venue=row.venue,
+        venue=new_venue,
         abstract=new_abstract,
         citation_count=row.citation_count,
         paper_url=row.paper_url,
@@ -391,7 +437,7 @@ def record_to_paper_row(record: dict[str, str]) -> PaperRow:
 def enrich_records(
     records: list[dict[str, str]], client: OpenAlexClient
 ) -> list[dict[str, str]]:
-    """Enrich matrix dict rows for abstract/keywords/doi and openalex_error."""
+    """Enrich matrix dict rows for abstract/keywords/doi/venue and openalex_error."""
     papers = [record_to_paper_row(r) for r in records]
     enriched = enrich_rows(papers, client)
     out: list[dict[str, str]] = []
@@ -400,6 +446,7 @@ def enrich_records(
         updated["abstract"] = paper.abstract
         updated["keywords"] = paper.keywords
         updated["doi"] = paper.doi
+        updated["venue"] = paper.venue
         updated["openalex_error"] = paper.openalex_error
         out.append(updated)
     return out

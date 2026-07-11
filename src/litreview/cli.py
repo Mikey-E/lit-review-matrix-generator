@@ -283,7 +283,8 @@ def run_enrich(
         "OpenAlex stats: "
         f"matched={openalex.stats.matched} unmatched={openalex.stats.unmatched} "
         f"abstracts={openalex.stats.abstracts_filled} keywords={openalex.stats.keywords_filled} "
-        f"dois={openalex.stats.dois_filled} api_calls={openalex.stats.api_calls} "
+        f"dois={openalex.stats.dois_filled} venues={openalex.stats.venues_filled} "
+        f"api_calls={openalex.stats.api_calls} "
         f"cache_hits={openalex.stats.cache_hits} errors={openalex.stats.errors}",
         flush=True,
     )
