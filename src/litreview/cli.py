@@ -107,6 +107,19 @@ def _ensure_llm_model(config) -> None:
         config.llm_model = DEFAULT_LLM_MODEL
 
 
+def _matrix_write_columns(
+    records: list[dict[str, str]], config_columns: list[str]
+) -> list[str]:
+    """Keep existing CSV column order; append any missing config columns."""
+    if not records:
+        return list(config_columns)
+    fieldnames = list(records[0].keys())
+    for col in config_columns:
+        if col not in fieldnames:
+            fieldnames.append(col)
+    return fieldnames
+
+
 def _run_llm_coding(config, records: list[dict[str, str]], *, use_cache: bool):
     _ensure_llm_model(config)
     cache = (
@@ -202,7 +215,11 @@ def run_code(
     matrix_path = _resolve_matrix_path(matrix_path)
     records = read_matrix(matrix_path)
     coded, llm_stats = _run_llm_coding(config, records, use_cache=use_cache)
-    write_matrix(matrix_path, coded, columns=config.matrix_columns)
+    write_matrix(
+        matrix_path,
+        coded,
+        columns=_matrix_write_columns(records, config.matrix_columns),
+    )
 
     meta_path = matrix_path.parent / "metadata.yaml"
     write_metadata(
@@ -242,7 +259,11 @@ def run_enrich(
             flush=True,
         )
     enriched = enrich_records(records, openalex)
-    write_matrix(matrix_path, enriched, columns=config.matrix_columns)
+    write_matrix(
+        matrix_path,
+        enriched,
+        columns=_matrix_write_columns(records, config.matrix_columns),
+    )
 
     meta_path = matrix_path.parent / "metadata.yaml"
     write_metadata(
