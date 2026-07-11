@@ -27,8 +27,10 @@ class LlmCodingStats:
     facet_api_calls: int = 0
     facet_cache_hits: int = 0
     screened: int = 0
+    screen_skipped_existing: int = 0
     facet_labels: int = 0
     skipped_exclude_for_facets: int = 0
+    facet_skipped_existing: int = 0
 
 
 def paper_cache_key(row: dict[str, str]) -> str:
@@ -228,21 +230,41 @@ class LlmCoder:
             )
         return value
 
+    def _existing_screen(self, row: dict[str, str]) -> str:
+        value = (row.get("screen") or "").strip()
+        allowed = {v.casefold(): v for v in self.config.screen_values}
+        key = value.casefold()
+        if key in allowed:
+            return allowed[key]
+        return ""
+
     def code_records(self, rows: list[dict[str, str]]) -> list[dict[str, str]]:
-        """Stage A all rows, then Stage B per facet for include+maybe only."""
+        """Stage A for rows missing screen, then Stage B facets for include+maybe."""
         coded: list[dict[str, str]] = []
         total = len(rows)
-        print(f"LLM Stage A (screen): {total} rows...", flush=True)
+        need_screen = sum(1 for r in rows if not self._existing_screen(r))
+        print(
+            f"LLM Stage A (screen): {need_screen}/{total} rows need coding...",
+            flush=True,
+        )
         for i, row in enumerate(rows, start=1):
             out = dict(row)
-            out["llm_model"] = self.model
-            out["screen"] = self.screen_row(out)
-            self.stats.screened += 1
+            existing = self._existing_screen(out)
+            if existing:
+                out["screen"] = existing
+                self.stats.screen_skipped_existing += 1
+            else:
+                out["llm_model"] = self.model
+                out["screen"] = self.screen_row(out)
+                self.stats.screened += 1
             coded.append(out)
             if i == 1 or i % 25 == 0 or i == total:
                 print(
                     f"  screen {i}/{total} "
-                    f"(api={self.stats.screen_api_calls} cache={self.stats.screen_cache_hits})",
+                    f"(new={self.stats.screened} "
+                    f"kept={self.stats.screen_skipped_existing} "
+                    f"api={self.stats.screen_api_calls} "
+                    f"cache={self.stats.screen_cache_hits})",
                     flush=True,
                 )
 
@@ -250,12 +272,14 @@ class LlmCoder:
         to_code = [
             r for r in coded
             if (r.get("screen") or "").strip().casefold() in stage_b_values
+            and any(not (r.get(f.name) or "").strip() for f in self.config.facets)
         ]
         print(
             f"LLM Stage B (facets): {len(to_code)} include/maybe rows "
-            f"× {len(self.config.facets)} facets...",
+            f"need facet fills x {len(self.config.facets)} facets...",
             flush=True,
         )
+        papers_faceted = 0
         for i, row in enumerate(coded, start=1):
             screen = (row.get("screen") or "").strip().casefold()
             if screen not in stage_b_values:
@@ -263,14 +287,26 @@ class LlmCoder:
                 for facet in self.config.facets:
                     row.setdefault(facet.name, "")
                 continue
+            filled_any = False
             for facet in self.config.facets:
+                if (row.get(facet.name) or "").strip():
+                    self.stats.facet_skipped_existing += 1
+                    continue
+                row["llm_model"] = row.get("llm_model") or self.model
                 row[facet.name] = self.code_facet(row, facet)
                 self.stats.facet_labels += 1
-            done = self.stats.facet_labels // max(len(self.config.facets), 1)
-            if done == 1 or done % 10 == 0 or i == total:
-                print(
-                    f"  facets on {done}/{len(to_code)} papers "
-                    f"(api={self.stats.facet_api_calls} cache={self.stats.facet_cache_hits})",
-                    flush=True,
-                )
+                filled_any = True
+            if filled_any:
+                papers_faceted += 1
+                if (
+                    papers_faceted == 1
+                    or papers_faceted % 10 == 0
+                    or papers_faceted == len(to_code)
+                ):
+                    print(
+                        f"  facets on {papers_faceted}/{len(to_code)} papers "
+                        f"(api={self.stats.facet_api_calls} "
+                        f"cache={self.stats.facet_cache_hits})",
+                        flush=True,
+                    )
         return coded

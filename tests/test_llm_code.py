@@ -117,3 +117,34 @@ def test_code_records_screens_then_facets_for_include_only():
     assert coder.stats.facet_labels == 2
     assert coder.stats.skipped_exclude_for_facets == 1
     assert original_create  # keep reference for lint silence
+
+
+def test_code_records_skips_existing_screen_and_facets():
+    client = _FakeOpenAI()
+    coder = LlmCoder(_config(), client=client, api_key="unused")
+    rows = [
+        {
+            "title": "Already coded include",
+            "year": "2022",
+            "abstract": "RGB and thermal yield model.",
+            "screen": "include",
+            "modality": "rgb+thermal",
+            "outcome": "yield",
+            "llm_model": "gpt-5.6-luna",
+        },
+        {
+            "title": "Needs screen",
+            "year": "2023",
+            "abstract": "Multimodal CEA cost study.",
+        },
+    ]
+    coded = coder.code_records(rows)
+    assert coded[0]["screen"] == "include"
+    assert coded[0]["modality"] == "rgb+thermal"
+    assert coded[1]["screen"] == "include"  # fake picks enum[0]
+    assert coded[1]["modality"] == "rgb+thermal"
+    assert coder.stats.screen_skipped_existing == 1
+    assert coder.stats.screened == 1
+    assert coder.stats.facet_skipped_existing == 2
+    assert coder.stats.facet_labels == 2
+    assert len(client.chat.completions.calls) == 3  # 1 screen + 2 facets
