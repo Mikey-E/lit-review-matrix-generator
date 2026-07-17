@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import io
+import os
 import re
 from dataclasses import dataclass
 from typing import Any
-from urllib.parse import urlparse
 
 import requests
 from pypdf import PdfReader
@@ -47,6 +47,9 @@ def pdf_urls_from_work(work: dict[str, Any] | None) -> list[str]:
         pdf = str(loc.get("pdf_url") or "").strip()
         if pdf:
             urls.append(pdf)
+        landing = str(loc.get("landing_page_url") or "").strip()
+        if landing.casefold().endswith(".pdf"):
+            urls.append(landing)
 
     _from_loc(work.get("best_oa_location"))
     _from_loc(work.get("primary_location"))
@@ -55,18 +58,100 @@ def pdf_urls_from_work(work: dict[str, Any] | None) -> list[str]:
         for loc in locations:
             _from_loc(loc)
 
+    oa = work.get("open_access")
+    if isinstance(oa, dict):
+        oa_url = str(oa.get("oa_url") or "").strip()
+        if oa_url:
+            urls.append(oa_url)
+
     ids = work.get("ids") if isinstance(work.get("ids"), dict) else {}
     arxiv = str(ids.get("arxiv") or "").strip()
     if arxiv:
-        # OpenAlex stores like https://arxiv.org/abs/...
         if "/abs/" in arxiv:
-            urls.append(arxiv.replace("/abs/", "/pdf/") + ".pdf")
+            urls.append(arxiv.replace("/abs/", "/pdf/"))
         elif arxiv.startswith("http"):
             urls.append(arxiv)
         else:
-            urls.append(f"https://arxiv.org/pdf/{arxiv}.pdf")
+            urls.append(f"https://arxiv.org/pdf/{arxiv}")
 
     return _unique(urls)
+
+
+def unpaywall_pdf_urls(
+    doi: str,
+    *,
+    email: str | None = None,
+    session: requests.Session | None = None,
+) -> list[str]:
+    doi = extract_doi(doi)
+    if not doi:
+        return []
+    mail = (
+        email
+        or os.environ.get("UNPAYWALL_EMAIL")
+        or os.environ.get("OPENALEX_MAILTO")
+        or ""
+    ).strip()
+    if not mail or "@" not in mail:
+        return []
+    sess = session or requests.Session()
+    url = f"https://api.unpaywall.org/v2/{doi}"
+    try:
+        response = sess.get(
+            url,
+            params={"email": mail},
+            headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+            timeout=30,
+        )
+    except requests.RequestException:
+        return []
+    if response.status_code >= 400:
+        return []
+    try:
+        payload = response.json()
+    except ValueError:
+        return []
+    if not isinstance(payload, dict):
+        return []
+    urls: list[str] = []
+    best = payload.get("best_oa_location")
+    if isinstance(best, dict) and best.get("url_for_pdf"):
+        urls.append(str(best["url_for_pdf"]))
+    for loc in payload.get("oa_locations") or []:
+        if isinstance(loc, dict) and loc.get("url_for_pdf"):
+            urls.append(str(loc["url_for_pdf"]))
+    return _unique(urls)
+
+
+def semantic_scholar_pdf_urls(
+    doi: str, *, session: requests.Session | None = None
+) -> list[str]:
+    doi = extract_doi(doi)
+    if not doi:
+        return []
+    sess = session or requests.Session()
+    url = f"https://api.semanticscholar.org/graph/v1/paper/DOI:{doi}"
+    try:
+        response = sess.get(
+            url,
+            params={"fields": "openAccessPdf"},
+            headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+            timeout=30,
+        )
+    except requests.RequestException:
+        return []
+    if response.status_code >= 400:
+        return []
+    try:
+        payload = response.json()
+    except ValueError:
+        return []
+    if not isinstance(payload, dict):
+        return []
+    oa = payload.get("openAccessPdf")
+    if isinstance(oa, dict) and oa.get("url"):
+        return [str(oa["url"]).strip()]
+    return []
 
 
 def normalize_for_quote_match(text: str) -> str:
@@ -80,7 +165,6 @@ def quote_supported_by_text(quote: str, full_text: str) -> bool:
     body = normalize_for_quote_match(full_text)
     if q in body:
         return True
-    # Tolerate minor whitespace/punctuation drift by checking a shortened core.
     core = re.sub(r"[^\w\s]", "", q)
     core = re.sub(r"\s+", " ", core).strip()
     if len(core) < MIN_QUOTE_LEN:
@@ -119,7 +203,9 @@ def download_pdf_text(url: str, *, session: requests.Session | None = None) -> F
         "Accept": "application/pdf,*/*",
     }
     try:
-        response = sess.get(url, headers=headers, timeout=DOWNLOAD_TIMEOUT_S, allow_redirects=True)
+        response = sess.get(
+            url, headers=headers, timeout=DOWNLOAD_TIMEOUT_S, allow_redirects=True
+        )
     except requests.RequestException as exc:
         return FullTextResult(error=f"download_error:{type(exc).__name__}")
     if response.status_code in {401, 403, 451}:
@@ -131,12 +217,9 @@ def download_pdf_text(url: str, *, session: requests.Session | None = None) -> F
 
     content_type = (response.headers.get("Content-Type") or "").casefold()
     data = response.content or b""
-    looks_pdf = (
-        "pdf" in content_type
-        or data[:5] == b"%PDF-"
-        or urlparse(response.url).path.casefold().endswith(".pdf")
-    )
-    if not looks_pdf:
+    if data.lstrip()[:1] == b"<" or "html" in content_type:
+        return FullTextResult(error="not_pdf")
+    if data[:5] != b"%PDF-":
         return FullTextResult(error="not_pdf")
     if len(data) < 1000:
         return FullTextResult(error="pdf_too_small")
@@ -188,15 +271,28 @@ def fetch_fulltext_for_row(
     *,
     session: requests.Session | None = None,
 ) -> FullTextResult:
-    work, err = resolve_openalex_work(row, openalex)
-    if err and work is None:
-        return FullTextResult(error=err)
-    urls = pdf_urls_from_work(work)
-    if not urls:
-        return FullTextResult(error="no_oa_pdf")
     sess = session or requests.Session()
+    urls: list[str] = []
+
+    paper_url = str(row.get("paper_url") or "").strip()
+    if paper_url.casefold().endswith(".pdf") or "arxiv.org/pdf/" in paper_url.casefold():
+        urls.append(paper_url)
+
+    work, err = resolve_openalex_work(row, openalex)
+    if work is not None:
+        urls.extend(pdf_urls_from_work(work))
+
+    doi = extract_doi(row.get("doi") or "")
+    if doi:
+        urls.extend(unpaywall_pdf_urls(doi, session=sess))
+        urls.extend(semantic_scholar_pdf_urls(doi, session=sess))
+
+    urls = _unique(urls)
+    if not urls:
+        return FullTextResult(error=err or "no_oa_pdf")
+
     last = FullTextResult(error="no_oa_pdf")
-    for url in urls[:5]:
+    for url in urls[:8]:
         result = download_pdf_text(url, session=sess)
         if result.text:
             return result
