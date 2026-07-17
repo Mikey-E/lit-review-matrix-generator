@@ -18,6 +18,7 @@ from litreview.output import (
     write_matrix,
     write_metadata,
 )
+from litreview.resolve_unclear import UnclearFacetResolver
 from litreview.scholar import ScholarClient
 
 
@@ -86,6 +87,25 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-cache",
         action="store_true",
         help="Disable on-disk OpenAlex response cache.",
+    )
+
+    resolve_unclear = sub.add_parser(
+        "resolve-unclear",
+        help=(
+            "For include rows only: try OA full text + evidence-gated LLM "
+            "to resolve unclear facet cells (skip paywalls/errors)."
+        ),
+    )
+    resolve_unclear.add_argument("config", type=Path, help="YAML study config")
+    resolve_unclear.add_argument(
+        "matrix",
+        type=Path,
+        help="Path to matrix.csv/.xlsx (or a run directory containing matrix.csv)",
+    )
+    resolve_unclear.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Disable on-disk OpenAI/OpenAlex response caches.",
     )
     return parser
 
@@ -291,6 +311,104 @@ def run_enrich(
     return matrix_path
 
 
+def _read_table(path: Path) -> tuple[list[dict[str, str]], list[str]]:
+    path = path.resolve()
+    if path.suffix.casefold() in {".xlsx", ".xlsm"}:
+        import pandas as pd
+
+        df = pd.read_excel(path, dtype=str).fillna("")
+        cols = list(df.columns)
+        return df.to_dict(orient="records"), cols
+    records = read_matrix(path)
+    cols = list(records[0].keys()) if records else []
+    return records, cols
+
+
+def _write_table(path: Path, records: list[dict[str, str]], columns: list[str]) -> None:
+    path = path.resolve()
+    fieldnames = list(columns)
+    for row in records:
+        for key in row:
+            if key not in fieldnames:
+                fieldnames.append(key)
+    if path.suffix.casefold() in {".xlsx", ".xlsm"}:
+        import pandas as pd
+
+        pd.DataFrame(
+            [{c: r.get(c, "") for c in fieldnames} for r in records],
+            columns=fieldnames,
+        ).to_excel(path, sheet_name="combined", index=False)
+        return
+    write_matrix(path, records, columns=fieldnames)
+
+
+def run_resolve_unclear(
+    config_path: Path,
+    matrix_path: Path,
+    *,
+    use_cache: bool = True,
+    checkpoint_every: int = 5,
+) -> Path:
+    load_dotenv()
+    config = load_config(config_path)
+    _ensure_llm_model(config)
+    matrix_path = _resolve_matrix_path(matrix_path)
+    records, columns = _read_table(matrix_path)
+
+    openai_cache = (
+        ResponseCache(_shared_cache_root() / "openai") if use_cache else None
+    )
+    openalex_cache = (
+        ResponseCache(_shared_cache_root() / "openalex") if use_cache else None
+    )
+    coder = LlmCoder(config, cache=openai_cache)
+    openalex = OpenAlexClient(cache=openalex_cache)
+    resolver = UnclearFacetResolver(config, coder=coder, openalex=openalex)
+
+    # Process with periodic checkpoints by resolving in chunks of target rows.
+    coded = [dict(r) for r in records]
+    targets = [
+        i
+        for i, row in enumerate(records)
+        if (row.get("include/exclude") or row.get("screen") or "").strip().casefold()
+        == "include"
+        and resolver.unclear_facets(row)
+    ]
+    total = len(targets)
+    print(f"resolve-unclear: {total} include rows with unclear facets...", flush=True)
+    done = 0
+    for i in targets:
+        coded[i] = resolver.resolve_row(records[i])
+        done += 1
+        if done == 1 or done % checkpoint_every == 0 or done == total:
+            _write_table(matrix_path, coded, columns)
+            print(
+                f"  row {done}/{total} "
+                f"fulltext={resolver.stats.rows_with_fulltext} "
+                f"resolved={resolver.stats.resolved} "
+                f"left_unclear={resolver.stats.left_unclear} "
+                f"bad_evidence={resolver.stats.skipped_bad_evidence} "
+                f"no_pdf={resolver.stats.rows_skipped_no_fulltext} "
+                f"api={resolver.stats.facet_api_calls} "
+                f"cache={resolver.stats.facet_cache_hits} checkpointed",
+                flush=True,
+            )
+
+    _write_table(matrix_path, coded, columns)
+    print(
+        "resolve-unclear stats: "
+        f"rows={resolver.stats.rows_considered} "
+        f"fulltext={resolver.stats.rows_with_fulltext} "
+        f"no_pdf={resolver.stats.rows_skipped_no_fulltext} "
+        f"resolved_cells={resolver.stats.resolved} "
+        f"left_unclear={resolver.stats.left_unclear} "
+        f"bad_evidence={resolver.stats.skipped_bad_evidence} "
+        f"errors={dict(resolver.stats.fulltext_errors)}",
+        flush=True,
+    )
+    return matrix_path
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     # Backward compatible: `litreview config.yaml` => harvest
@@ -298,6 +416,7 @@ def main(argv: list[str] | None = None) -> int:
         "harvest",
         "code",
         "enrich",
+        "resolve-unclear",
     }:
         argv = ["harvest", *argv]
 
@@ -327,6 +446,15 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(f"Updated matrix at {matrix_path}")
             print(f"Wrote metadata to {matrix_path.parent / 'metadata.yaml'}")
+            return 0
+
+        if args.command == "resolve-unclear":
+            matrix_path = run_resolve_unclear(
+                args.config,
+                args.matrix,
+                use_cache=not args.no_cache,
+            )
+            print(f"Updated matrix at {matrix_path}")
             return 0
 
         matrix_path = run_code(
