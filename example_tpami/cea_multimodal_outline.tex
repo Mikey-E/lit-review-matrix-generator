@@ -1,0 +1,300 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+% Outline skeleton for multimodal CEA lit-review matrix synthesis (include-only).
+
+\begin{document}
+
+\title{Multimodal AI for Yield Enhancement and Cost Reduction in Controlled Environment Agriculture}
+
+\author{IEEE Publication Technology,~\IEEEmembership{Staff,~IEEE,}
+        % <-this % stops a space
+\thanks{This paper was produced by the IEEE Publication Technology Group. They are in Piscataway, NJ.}% <-this % stops a space
+\thanks{Manuscript received April 19, 2021; revised August 16, 2021.}}
+
+% The paper headers
+\markboth{Journal of \LaTeX\ Class Files,~Vol.~14, No.~8, August~2021}%
+{Shell \MakeLowercase{\textit{et al.}}: A Sample Article Using IEEEtran.cls for IEEE Journals}
+
+\IEEEpubid{0000--0000/00\$00.00~\copyright~2021 IEEE}
+% Remember, if you use this you must call \IEEEpubidadjcol in the second
+% column for its text to clear the IEEEpubid mark.
+
+\maketitle
+
+\begin{abstract}
+
+1. Based on the title (which defines scope), start with a clear research question or set of questions.
+    a. does the AI actually improve yield or cut cost, and how is that measured? What evidence exists that multimodal AI systems deliver measured yield improvements or operating-cost reductions in controlled environment agriculture, and how do multimodal approaches compare to single-modality baselines?
+        (primary question - drives inclusion/exclusion during screening)
+    SQ1 --- Modalities and fusion: Which modality combinations (e.g., RGB + thermal, hyperspectral + environmental sensors, imagery + time-series climate data) and fusion strategies (early/late/intermediate) are used, and which show the largest gains over single-modality baselines?
+    SQ2 --- Outcome measurement chain: How do studies connect model performance to agronomic or economic outcomes --- direct field/greenhouse trials, simulation, cost modeling, or unsupported assertion? This is the evidence-quality axis. It lets one stratify the literature into ``demonstrated,'' ``modeled,'' and ``claimed'' benefit, which is where the synthesis gets its teeth.
+    SQ3 --- Deployment economics: What are the reported costs of the multimodal systems themselves (sensors, compute, integration, maintenance), and do any studies report net economic benefit? Cost reduction is in your title, but multimodal sensing adds cost before it saves any. A hyperspectral camera can run tens of thousands of dollars. Consideration of this subquestion gets you gaps and future work section(s).
+    (caution: SQ2 and SQ3 will have thin literature. Resist the urge to widen the primary question to compensate --- thinness there is the/a contribution.)
+    SQ4 (optional --- keep only if scoping) : What crops, CEA system types, and geographic/institutional contexts are represented, and where are the gaps? If going the scoping-review route, this is standard gap-mapping. If staying ``narrative'', fold it into a short ``limitations of the literature'' section rather than treating it as a full sub-question.
+
+2. Search \& collect sources (this is the excel sheet)
+3. Screen \& select
+4. Extract \& analyze
+5. Synthesize and identify gaps
+6. Write the review
+
+List 2D-LLMs -- these are worth considering
+
+Qwen3-VL
+
+Llama 4 (Scout/Maverick)
+
+GLM-4.6V
+
+Gemma 3/4
+
+Molmo
+
+CEA datasets -- non-exhaustive:
+
+HydroGrowNet (Mendeley)
+
+Plant Phenotyping Datasets (plant-phenotyping.org)
+
+New Plant Diseases Dataset (Kaggle)
+
+CEAOD Repository
+
+UNL Plant Phenotyping Datasets
+
+Hydroponic sensor/growth datasets (Kaggle/IEEE/Mendeley)
+
+May want to have a section or emphasis on finding mistakes in CEA (made by others) and not repeating them.
+
+Labor costs are higher per pound of produce. Need skilled labor much more. Can't necessarily hire unskilled. Might require labor 24/7 labor instead of seasonal.
+
+CEA is working well for some crops but not others
+
+---
+Tentative criteria:
+
+Inclusion: Peer-reviewed papers/preprints (2015+) on multimodal AI/ML ($\geq$ 2 modalities, e.g., RGB+thermal, imagery+sensors, image+text) in CEA for yield/cost outcomes with quantitative measurements or modeling vs. baselines.
+
+Exclusion: text-only models, non-agriculture, no yield/cost metrics, pure theory/reviews without data, non-English, $<$2015.
+---
+Boolean search strings: IEEE Xplore, Scopus, Web of Science, Google Scholar
+
+1. (``multimodal'' OR ``multi-modal'') AND (``controlled environment agriculture'' OR CEA OR greenhouse OR hydroponics OR ``vertical farming'') AND (yield OR cost) AND (AI OR ML OR ``machine learning'')
+2. (``sensor fusion'' OR ``data fusion'') AND (``controlled environment'' OR CEA) AND (yield OR productivity OR cost) AND (``computer vision'' OR CNN OR ``deep learning'')
+3. (``vision-language'' OR VLM OR ``multimodal LLM'') AND (CEA OR greenhouse) AND (yield OR cost) AND agriculture
+4. ``multimodal'' AND CEA AND (yield OR cost) AND (AI OR ``deep learning'')
+
+Google Scholar approach: Looked thru top 20 most relevant for each string (pages 1 + 2)
+
+\end{abstract}
+
+\begin{IEEEkeywords}
+Article submission, IEEE, IEEEtran, journal, \LaTeX, paper, template, typesetting.
+\end{IEEEkeywords}
+
+% No Introduction yet --- facet outline begins below (include-coded papers only).
+
+\section{Modality}
+\IEEEPARstart{T}{his} section will synthesize included papers by primary modality / fusion coding.
+Empty subsections below are placeholders for later synthesis.
+
+\begin{table}[!t]
+\caption{Count of Included Papers by Modality (skeleton)}
+\label{tab:modality_counts}
+\centering
+\begin{tabular}{|l|c|}
+\hline
+Modality value & Count\\
+\hline
+rgb+thermal & ---\\
+imagery+sensors & ---\\
+image+text & ---\\
+other\_fusion & ---\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{rgb+thermal}
+
+\subsection{imagery+sensors}
+
+\subsection{image+text}
+
+\subsection{other\_fusion}
+
+
+\section{CEA Setting}
+This section will synthesize included papers by controlled-environment setting.
+
+\begin{table}[!t]
+\caption{Count of Included Papers by CEA Setting (skeleton)}
+\label{tab:cea_setting_counts}
+\centering
+\begin{tabular}{|l|c|}
+\hline
+CEA setting value & Count\\
+\hline
+greenhouse & ---\\
+vertical\_farm & ---\\
+hydroponics & ---\\
+general\_cea & ---\\
+mixed & ---\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{greenhouse}
+
+\subsection{vertical\_farm}
+
+\subsection{hydroponics}
+
+\subsection{general\_cea}
+
+\subsection{mixed}
+
+
+\section{Outcome}
+This section will synthesize included papers by reported outcome focus (yield and/or cost).
+
+\begin{table}[!t]
+\caption{Count of Included Papers by Outcome (skeleton)}
+\label{tab:outcome_counts}
+\centering
+\begin{tabular}{|l|c|}
+\hline
+Outcome value & Count\\
+\hline
+yield & ---\\
+cost & ---\\
+yield\_and\_cost & ---\\
+proxy\_only & ---\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{yield}
+
+\subsection{cost}
+
+\subsection{yield\_and\_cost}
+
+\subsection{proxy\_only}
+
+
+\section{Method Family}
+This section will synthesize included papers by method / modeling family.
+
+\begin{table}[!t]
+\caption{Count of Included Papers by Method Family (skeleton)}
+\label{tab:method_family_counts}
+\centering
+\begin{tabular}{|l|c|}
+\hline
+Method family value & Count\\
+\hline
+classical\_ml & ---\\
+deep\_cv & ---\\
+vlm\_llm & ---\\
+sensor\_fusion\_pipeline & ---\\
+hybrid & ---\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{classical\_ml}
+
+\subsection{deep\_cv}
+
+\subsection{vlm\_llm}
+
+\subsection{sensor\_fusion\_pipeline}
+
+\subsection{hybrid}
+
+
+\section{Evidence Type}
+This section will synthesize included papers by evidence type (empirical vs.\ modeled).
+
+\begin{table}[!t]
+\caption{Count of Included Papers by Evidence Type (skeleton)}
+\label{tab:evidence_type_counts}
+\centering
+\begin{tabular}{|l|c|}
+\hline
+Evidence type value & Count\\
+\hline
+experiment & ---\\
+simulation\_model & ---\\
+both & ---\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{experiment}
+
+\subsection{simulation\_model}
+
+\subsection{both}
+
+
+\section{Contribution Type}
+This section will synthesize included papers by primary contribution type.
+
+\begin{table}[!t]
+\caption{Count of Included Papers by Contribution Type (skeleton)}
+\label{tab:contribution_type_counts}
+\centering
+\begin{tabular}{|l|c|}
+\hline
+Contribution type value & Count\\
+\hline
+survey & ---\\
+method\_model & ---\\
+dataset & ---\\
+system\_application & ---\\
+benchmark\_evaluation & ---\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{survey}
+
+\subsection{method\_model}
+
+\subsection{dataset}
+
+\subsection{system\_application}
+
+\subsection{benchmark\_evaluation}
+
+
+% --- End-matter stubs (kept short for layout/margins) ---
+
+\section*{Acknowledgment}
+The authors thank \ldots\ % stub
+
+\begin{thebibliography}{1}
+\bibliographystyle{IEEEtran}
+
+\bibitem{ref1}
+A.~N.~Author, ``Example reference stub,'' \textit{IEEE Trans. Pattern Anal. Mach. Intell.}, vol.~0, no.~0, pp.~0--0, 2026.
+
+\end{thebibliography}
+
+\begin{IEEEbiographynophoto}{Author Name}
+Biography stub.
+\end{IEEEbiographynophoto}
+
+\end{document}
