@@ -1,0 +1,374 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{float}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+% Outline for multimodal CEA lit-review matrix synthesis (include-only).
+
+\begin{document}
+
+\title{Multimodal AI for Yield Enhancement and Cost Reduction in Controlled Environment Agriculture}
+
+\author{IEEE Publication Technology,~\IEEEmembership{Staff,~IEEE,}
+        % <-this % stops a space
+\thanks{This paper was produced by the IEEE Publication Technology Group. They are in Piscataway, NJ.}% <-this % stops a space
+\thanks{Manuscript received April 19, 2021; revised August 16, 2021.}}
+
+% The paper headers
+\markboth{Journal of \LaTeX\ Class Files,~Vol.~14, No.~8, August~2021}%
+{Shell \MakeLowercase{\textit{et al.}}: A Sample Article Using IEEEtran.cls for IEEE Journals}
+
+\IEEEpubid{0000--0000/00\$00.00~\copyright~2021 IEEE}
+% Remember, if you use this you must call \IEEEpubidadjcol in the second
+% column for its text to clear the IEEEpubid mark.
+
+\maketitle
+
+\begin{abstract}
+Controlled environment agriculture (CEA) — greenhouses, vertical farms, plant factories, and hydroponic/aeroponic systems — is a data-rich production regime in which heterogeneous signals (RGB and spectral imagery, depth/3D, thermal, in-canopy IoT time-series, and increasingly biosensor and textual knowledge streams) can be co-observed under near-controllable conditions. This makes CEA a uniquely favorable testbed for multimodal AI, yet the literature is fragmented across sensing, fusion architectures, and, most recently, vision–language models (VLMs), large language model (LLM) agents, and vision–language–action (VLA) policies. This survey organizes the field along three orthogonal axes — environment, modality, and model-capability generation — and traces a clear evolutionary arc from unimodal deep learning through explicit multimodal fusion networks and transformers to VLM-based perception, LLM/agentic reasoning, and embodied VLA and agricultural foundation models. We consolidate the modality landscape, datasets and benchmarks, fusion strategies, and evaluation protocols; synthesize the task landscape (disease/stress diagnosis, phenotyping, and growth/yield estimation, environmental control and resource recommendation, and robotic harvesting/pollination/weeding); and give dedicated treatment to two dimensions that prior CEA and general-agriculture surveys underplay: trustworthiness (hallucination, robustness, adversarial/backdoor security, and privacy-preserving/federated learning) and deployment systems (edge/on-device inference, digital twins, and robotics integration). We close with a research agenda emphasizing generalization across crops and sites, data efficiency, standardized multimodal benchmarks, and safe, verifiable decision-to-action pipelines.
+
+\begin{comment}
+1. Based on the title (which defines scope), start with a clear research question or set of questions.
+    a. does the AI actually improve yield or cut cost, and how is that measured? What evidence exists that multimodal AI systems deliver measured yield improvements or operating-cost reductions in controlled environment agriculture, and how do multimodal approaches compare to single-modality baselines?
+        (primary question - drives inclusion/exclusion during screening)
+    SQ1 --- Modalities and fusion: Which modality combinations (e.g., RGB + thermal, hyperspectral + environmental sensors, imagery + time-series climate data) and fusion strategies (early/late/intermediate) are used, and which show the largest gains over single-modality baselines?
+    SQ2 --- Outcome measurement chain: How do studies connect model performance to agronomic or economic outcomes --- direct field/greenhouse trials, simulation, cost modeling, or unsupported assertion? This is the evidence-quality axis. It lets one stratify the literature into ``demonstrated,'' ``modeled,'' and ``claimed'' benefit, which is where the synthesis gets its teeth.
+    SQ3 --- Deployment economics: What are the reported costs of the multimodal systems themselves (sensors, compute, integration, maintenance), and do any studies report net economic benefit? Cost reduction is in your title, but multimodal sensing adds cost before it saves any. A hyperspectral camera can run tens of thousands of dollars. Consideration of this subquestion gets you gaps and future work section(s).
+    (caution: SQ2 and SQ3 will have thin literature. Resist the urge to widen the primary question to compensate --- thinness there is the/a contribution.)
+    SQ4 (optional --- keep only if scoping) : What crops, CEA system types, and geographic/institutional contexts are represented, and where are the gaps? If going the scoping-review route, this is standard gap-mapping. If staying ``narrative'', fold it into a short ``limitations of the literature'' section rather than treating it as a full sub-question.
+\end{comment}
+
+% 2. Search \& collect sources (this is the excel sheet)
+% 3. Screen \& select
+% 4. Extract \& analyze
+% 5. Synthesize and identify gaps
+% 6. Write the review
+
+% List 2D-LLMs -- these are worth considering
+
+% Qwen3-VL
+
+% Llama 4 (Scout/Maverick)
+
+% GLM-4.6V
+
+% Gemma 3/4
+
+% Molmo
+
+% CEA datasets -- non-exhaustive:
+
+% HydroGrowNet (Mendeley)
+
+% Plant Phenotyping Datasets (plant-phenotyping.org)
+
+% New Plant Diseases Dataset (Kaggle)
+
+% CEAOD Repository
+
+% UNL Plant Phenotyping Datasets
+
+% Hydroponic sensor/growth datasets (Kaggle/IEEE/Mendeley)
+
+% May want to have a section or emphasis on finding mistakes in CEA (made by others) and not repeating them.
+
+% Labor costs are higher per pound of produce. Need skilled labor much more. Can't necessarily hire unskilled. Might require labor 24/7 labor instead of seasonal.
+
+% CEA is working well for some crops but not others
+
+% ---
+% Tentative criteria:
+
+% Inclusion: Peer-reviewed papers/preprints (2015+) on multimodal AI/ML ($\geq$ 2 modalities, e.g., RGB+thermal, imagery+sensors, image+text) in CEA for yield/cost outcomes with quantitative measurements or modeling vs. baselines.
+
+% Exclusion: text-only models, non-agriculture, no yield/cost metrics, pure theory/reviews without data, non-English, $<$2015.
+% ---
+% Boolean search strings: IEEE Xplore, Scopus, Web of Science, Google Scholar
+
+% 1. (``multimodal'' OR ``multi-modal'') AND (``controlled environment agriculture'' OR CEA OR greenhouse OR hydroponics OR ``vertical farming'') AND (yield OR cost) AND (AI OR ML OR ``machine learning'')
+% 2. (``sensor fusion'' OR ``data fusion'') AND (``controlled environment'' OR CEA) AND (yield OR productivity OR cost) AND (``computer vision'' OR CNN OR ``deep learning'')
+% 3. (``vision-language'' OR VLM OR ``multimodal LLM'') AND (CEA OR greenhouse) AND (yield OR cost) AND agriculture
+% 4. ``multimodal'' AND CEA AND (yield OR cost) AND (AI OR ``deep learning'')
+
+% Google Scholar approach: Looked thru top 20 most relevant for each string (pages 1 + 2)
+
+\end{abstract}
+
+\begin{IEEEkeywords}
+Article submission, IEEE, IEEEtran, journal, \LaTeX, paper, template, typesetting.
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+\subsection{Controlled-environment agriculture}
+
+Introduce greenhouses, plant factories, vertical farms, hydroponics, and aeroponics. 
+
+Explain how CEA creates a partially observable, dynamically controlled system involving plants, environmental conditions, management actions, and resource constraints.
+
+\subsection{Why multimodal intelligence is necessary}
+
+Explain the complementary information provided by:
+
+RGB and video
+
+Thermal, multispectral, and hyperspectral imaging
+
+Depth, RGB-D, LiDAR, and 3D point clouds
+
+Temperature, humidity, light, CO$_2$, soil, and nutrient sensors
+
+Physiological and wearable plant sensors
+
+Textual records, expert knowledge, and management logs
+
+Robot state, maps, actions, and tactile feedback
+
+For example, visible and hyperspectral information captures complementary morphological and biochemical maturity indicators, while RGB-D fusion improves geometric phenotype estimation.
+
+Present four generations:
+
+Unimodal perception
+
+Multisensor and multimodal fusion
+
+Multimodal transformers and foundation models
+
+Agentic and embodied agricultural intelligence
+
+
+\subsection{Limitations of existing surveys}
+
+Discuss how earlier surveys generally focus on one of the following:
+
+Computer vision in CEA
+IoT and greenhouse automation
+Sensor fusion for a single task such as water stress
+General multimodal agricultural learning
+Agricultural robotics
+LLM applications without physical control
+\subsection{Survey contributions}
+
+The paper should claim the following contributions:
+
+\begin{itemize}
+    \item A unified taxonomy spanning sensing, fusion, reasoning, control, and embodiment.
+\item An autonomy-based classification from monitoring to closed-loop robotic operation.
+\item A systematic comparison of multimodal architectures and fusion mechanisms.
+\item A dedicated analysis of foundation models, VLMs, LLM agents, and VLA policies.
+\item A benchmark taxonomy covering biological accuracy, operational utility, and safety.
+\item A roadmap toward trustworthy autonomous CEA systems.
+\end{itemize}
+
+
+
+
+
+
+
+\newpage
+
+
+
+\section{Modality}
+\IEEEPARstart{T}{his} section will synthesize included papers by primary modality/fusion coding.
+Empty subsections below are placeholders for later synthesis.
+
+\begin{table}[H]
+\caption{Count of Included Papers by Modality}
+\label{tab:modality_counts}
+\centering
+\begin{tabular}{|l|c|}
+\hline
+Modality value & Count\\
+\hline
+rgb+thermal & ---\\
+imagery+sensors & ---\\
+image+text & ---\\
+other\_fusion & ---\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{rgb+thermal}
+
+\subsection{imagery+sensors}
+
+\subsection{image+text}
+
+\subsection{other\_fusion}
+
+
+\section{CEA Setting}
+This section will synthesize included papers by controlled-environment setting.
+
+\begin{table}[H]
+\caption{Count of Included Papers by CEA Setting}
+\label{tab:cea_setting_counts}
+\centering
+\begin{tabular}{|l|c|}
+\hline
+CEA setting value & Count\\
+\hline
+greenhouse & ---\\
+vertical\_farm & ---\\
+hydroponics & ---\\
+general\_cea & ---\\
+mixed & ---\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{greenhouse}
+
+\subsection{vertical\_farm}
+
+\subsection{hydroponics}
+
+\subsection{general\_cea}
+
+\subsection{mixed}
+
+
+\section{Outcome}
+This section will synthesize included papers by reported outcome focus (yield and/or cost).
+
+\begin{table}[H]
+\caption{Count of Included Papers by Outcome}
+\label{tab:outcome_counts}
+\centering
+\begin{tabular}{|l|c|}
+\hline
+Outcome value & Count\\
+\hline
+yield & ---\\
+cost & ---\\
+yield\_and\_cost & ---\\
+proxy\_only & ---\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{yield}
+
+\subsection{cost}
+
+\subsection{yield\_and\_cost}
+
+\subsection{proxy\_only}
+
+
+\section{Method Family}
+This section will synthesize included papers by method / modeling family.
+
+\begin{table}[H]
+\caption{Count of Included Papers by Method Family}
+\label{tab:method_family_counts}
+\centering
+\begin{tabular}{|l|c|}
+\hline
+Method family value & Count\\
+\hline
+classical\_ml & ---\\
+deep\_cv & ---\\
+vlm\_llm & ---\\
+sensor\_fusion\_pipeline & ---\\
+hybrid & ---\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{classical\_ml}
+
+\subsection{deep\_cv}
+
+\subsection{vlm\_llm}
+
+\subsection{sensor\_fusion\_pipeline}
+
+\subsection{hybrid}
+
+
+\section{Evidence Type}
+This section will synthesize included papers by evidence type (empirical vs.\ modeled).
+
+\begin{table}[H]
+\caption{Count of Included Papers by Evidence Type}
+\label{tab:evidence_type_counts}
+\centering
+\begin{tabular}{|l|c|}
+\hline
+Evidence type value & Count\\
+\hline
+experiment & ---\\
+simulation\_model & ---\\
+both & ---\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{experiment}
+
+\subsection{simulation\_model}
+
+\subsection{both}
+
+
+\section{Contribution Type}
+This section will synthesize included papers by primary contribution type.
+
+\begin{table}[H]
+\caption{Count of Included Papers by Contribution Type}
+\label{tab:contribution_type_counts}
+\centering
+\begin{tabular}{|l|c|}
+\hline
+Contribution type value & Count\\
+\hline
+survey & ---\\
+method\_model & ---\\
+dataset & ---\\
+system\_application & ---\\
+benchmark\_evaluation & ---\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{survey}
+
+\subsection{method\_model}
+
+\subsection{dataset}
+
+\subsection{system\_application}
+
+\subsection{benchmark\_evaluation}
+
+
+% --- End-matter stubs (kept short for layout/margins) ---
+
+\section*{Acknowledgment}
+The authors thank \ldots\ % stub
+
+\begin{thebibliography}{1}
+\bibliographystyle{IEEEtran}
+
+\bibitem{ref1}
+A.~N.~Author, ``Example reference stub,'' \textit{IEEE Trans. Pattern Anal. Mach. Intell.}, vol.~0, no.~0, pp.~0--0, 2026.
+
+\end{thebibliography}
+
+\begin{IEEEbiographynophoto}{Author Name}
+Biography stub.
+\end{IEEEbiographynophoto}
+
+\end{document}
