@@ -34,7 +34,9 @@
 \maketitle
 
 \begin{abstract}
+Controlled environment agriculture (CEA) — greenhouses, vertical farms, plant factories, and hydroponic/aeroponic systems — is a data-rich production regime in which heterogeneous signals (RGB and spectral imagery, depth/3D, thermal, in-canopy IoT time-series, and increasingly biosensor and textual knowledge streams) can be co-observed under near-controllable conditions. This makes CEA a uniquely favorable testbed for multimodal AI, yet the literature is fragmented across sensing, fusion architectures, and, most recently, vision–language models (VLMs), large language model (LLM) agents, and vision–language–action (VLA) policies. This survey organizes the field along three orthogonal axes — environment, modality, and model-capability generation — and traces a clear evolutionary arc from unimodal deep learning through explicit multimodal fusion networks and transformers to VLM-based perception, LLM/agentic reasoning, and embodied VLA and agricultural foundation models. We consolidate the modality landscape, datasets and benchmarks, fusion strategies, and evaluation protocols; synthesize the task landscape (disease/stress diagnosis, phenotyping, and growth/yield estimation, environmental control and resource recommendation, and robotic harvesting/pollination/weeding); and give dedicated treatment to two dimensions that prior CEA and general-agriculture surveys underplay: trustworthiness (hallucination, robustness, adversarial/backdoor security, and privacy-preserving/federated learning) and deployment systems (edge/on-device inference, digital twins, and robotics integration). We close with a research agenda emphasizing generalization across crops and sites, data efficiency, standardized multimodal benchmarks, and safe, verifiable decision-to-action pipelines.
 
+\begin{comment}
 1. Based on the title (which defines scope), start with a clear research question or set of questions.
     a. does the AI actually improve yield or cut cost, and how is that measured? What evidence exists that multimodal AI systems deliver measured yield improvements or operating-cost reductions in controlled environment agriculture, and how do multimodal approaches compare to single-modality baselines?
         (primary question - drives inclusion/exclusion during screening)
@@ -43,60 +45,61 @@
     SQ3 --- Deployment economics: What are the reported costs of the multimodal systems themselves (sensors, compute, integration, maintenance), and do any studies report net economic benefit? Cost reduction is in your title, but multimodal sensing adds cost before it saves any. A hyperspectral camera can run tens of thousands of dollars. Consideration of this subquestion gets you gaps and future work section(s).
     (caution: SQ2 and SQ3 will have thin literature. Resist the urge to widen the primary question to compensate --- thinness there is the/a contribution.)
     SQ4 (optional --- keep only if scoping) : What crops, CEA system types, and geographic/institutional contexts are represented, and where are the gaps? If going the scoping-review route, this is standard gap-mapping. If staying ``narrative'', fold it into a short ``limitations of the literature'' section rather than treating it as a full sub-question.
+\end{comment}
 
-2. Search \& collect sources (this is the excel sheet)
-3. Screen \& select
-4. Extract \& analyze
-5. Synthesize and identify gaps
-6. Write the review
+% 2. Search \& collect sources (this is the excel sheet)
+% 3. Screen \& select
+% 4. Extract \& analyze
+% 5. Synthesize and identify gaps
+% 6. Write the review
 
-List 2D-LLMs -- these are worth considering
+% List 2D-LLMs -- these are worth considering
 
-Qwen3-VL
+% Qwen3-VL
 
-Llama 4 (Scout/Maverick)
+% Llama 4 (Scout/Maverick)
 
-GLM-4.6V
+% GLM-4.6V
 
-Gemma 3/4
+% Gemma 3/4
 
-Molmo
+% Molmo
 
-CEA datasets -- non-exhaustive:
+% CEA datasets -- non-exhaustive:
 
-HydroGrowNet (Mendeley)
+% HydroGrowNet (Mendeley)
 
-Plant Phenotyping Datasets (plant-phenotyping.org)
+% Plant Phenotyping Datasets (plant-phenotyping.org)
 
-New Plant Diseases Dataset (Kaggle)
+% New Plant Diseases Dataset (Kaggle)
 
-CEAOD Repository
+% CEAOD Repository
 
-UNL Plant Phenotyping Datasets
+% UNL Plant Phenotyping Datasets
 
-Hydroponic sensor/growth datasets (Kaggle/IEEE/Mendeley)
+% Hydroponic sensor/growth datasets (Kaggle/IEEE/Mendeley)
 
-May want to have a section or emphasis on finding mistakes in CEA (made by others) and not repeating them.
+% May want to have a section or emphasis on finding mistakes in CEA (made by others) and not repeating them.
 
-Labor costs are higher per pound of produce. Need skilled labor much more. Can't necessarily hire unskilled. Might require labor 24/7 labor instead of seasonal.
+% Labor costs are higher per pound of produce. Need skilled labor much more. Can't necessarily hire unskilled. Might require labor 24/7 labor instead of seasonal.
 
-CEA is working well for some crops but not others
+% CEA is working well for some crops but not others
 
----
-Tentative criteria:
+% ---
+% Tentative criteria:
 
-Inclusion: Peer-reviewed papers/preprints (2015+) on multimodal AI/ML ($\geq$ 2 modalities, e.g., RGB+thermal, imagery+sensors, image+text) in CEA for yield/cost outcomes with quantitative measurements or modeling vs. baselines.
+% Inclusion: Peer-reviewed papers/preprints (2015+) on multimodal AI/ML ($\geq$ 2 modalities, e.g., RGB+thermal, imagery+sensors, image+text) in CEA for yield/cost outcomes with quantitative measurements or modeling vs. baselines.
 
-Exclusion: text-only models, non-agriculture, no yield/cost metrics, pure theory/reviews without data, non-English, $<$2015.
----
-Boolean search strings: IEEE Xplore, Scopus, Web of Science, Google Scholar
+% Exclusion: text-only models, non-agriculture, no yield/cost metrics, pure theory/reviews without data, non-English, $<$2015.
+% ---
+% Boolean search strings: IEEE Xplore, Scopus, Web of Science, Google Scholar
 
-1. (``multimodal'' OR ``multi-modal'') AND (``controlled environment agriculture'' OR CEA OR greenhouse OR hydroponics OR ``vertical farming'') AND (yield OR cost) AND (AI OR ML OR ``machine learning'')
-2. (``sensor fusion'' OR ``data fusion'') AND (``controlled environment'' OR CEA) AND (yield OR productivity OR cost) AND (``computer vision'' OR CNN OR ``deep learning'')
-3. (``vision-language'' OR VLM OR ``multimodal LLM'') AND (CEA OR greenhouse) AND (yield OR cost) AND agriculture
-4. ``multimodal'' AND CEA AND (yield OR cost) AND (AI OR ``deep learning'')
+% 1. (``multimodal'' OR ``multi-modal'') AND (``controlled environment agriculture'' OR CEA OR greenhouse OR hydroponics OR ``vertical farming'') AND (yield OR cost) AND (AI OR ML OR ``machine learning'')
+% 2. (``sensor fusion'' OR ``data fusion'') AND (``controlled environment'' OR CEA) AND (yield OR productivity OR cost) AND (``computer vision'' OR CNN OR ``deep learning'')
+% 3. (``vision-language'' OR VLM OR ``multimodal LLM'') AND (CEA OR greenhouse) AND (yield OR cost) AND agriculture
+% 4. ``multimodal'' AND CEA AND (yield OR cost) AND (AI OR ``deep learning'')
 
-Google Scholar approach: Looked thru top 20 most relevant for each string (pages 1 + 2)
+% Google Scholar approach: Looked thru top 20 most relevant for each string (pages 1 + 2)
 
 \end{abstract}
 
@@ -104,10 +107,109 @@ Google Scholar approach: Looked thru top 20 most relevant for each string (pages
 Article submission, IEEE, IEEEtran, journal, \LaTeX, paper, template, typesetting.
 \end{IEEEkeywords}
 
-% No Introduction yet --- facet outline begins below (include-coded papers only).
+\section{Introduction}
+
+\subsection{Controlled-environment agriculture}
+
+Introduce greenhouses, plant factories, vertical farms, hydroponics, and aeroponics. 
+
+Explain how CEA creates a partially observable, dynamically controlled system involving plants, environmental conditions, management actions, and resource constraints.
+
+Controlled-environment agriculture (CEA) encompasses production systems in which climate, lighting, water, and nutrient delivery are actively managed rather than left primarily to outdoor weather. Canonical forms include greenhouses and glasshouses, plant factories and other indoor farms, vertical farming installations, and soilless culture systems such as hydroponics and aeroponics. Relative to open-field agriculture, these settings compress biological and operational decisions into a tighter loop: growers (or controllers) continuously trade off crop performance against energy, water, labor, and capital costs under partially known plant states.
+
+That loop is only partially observable. Internal canopy conditions, root-zone chemistry, early stress, and developmental stage are not fully captured by any single dashboard reading, while actuation---heating, dehumidification, fertigation, pruning, harvesting---alters the very signals used for monitoring. The resulting system couples plants, environmental dynamics, management actions, and resource constraints into a feedback process that is data-rich yet noisy, delayed, and expensive to instrument exhaustively. This character of CEA is precisely what motivates multimodal sensing and learning: complementary measurements are required to reconstruct plant and environment state well enough to support yield- and cost-relevant decisions.
+
+% TODO: add 1--2 standard CEA definitions/citations preferred by the advisor (textbook or policy source).
+
+
+\subsection{Why multimodal intelligence is necessary}
+
+Explain the complementary information provided by:
+
+RGB and video
+
+Thermal, multispectral, and hyperspectral imaging
+
+Depth, RGB-D, LiDAR, and 3D point clouds
+
+Temperature, humidity, light, CO$_2$, soil, and nutrient sensors
+
+Physiological and wearable plant sensors
+
+Textual records, expert knowledge, and management logs
+
+Robot state, maps, actions, and tactile feedback
+
+For example, visible and hyperspectral information captures complementary morphological and biochemical maturity indicators, while RGB-D fusion improves geometric phenotype estimation.
+
+Present four generations:
+
+Unimodal perception
+
+Multisensor and multimodal fusion
+
+Multimodal transformers and foundation models
+
+Agentic and embodied agricultural intelligence
+
+No single modality is sufficient for the decision problems that dominate CEA. RGB and video supply morphology, color, and motion cues at comparatively low cost, but they under-specify water status, nutrient stress, and many biochemical traits. Thermal, multispectral, and hyperspectral imaging add physiology- and chemistry-linked contrast; depth, RGB-D, LiDAR, and related 3D sensing recover canopy geometry needed for biomass, volume, and manipulation. In parallel, in-situ IoT streams---temperature, humidity, light, CO$_2$, substrate and nutrient measurements---encode the controllable environment, while physiological or wearable plant sensors, when available, provide more direct plant responses. Textual records (scouting notes, recipes, manuals) and, for robotics, state/maps/actions/tactile feedback extend the observation space beyond cameras and climate boards. The complementary nature of these channels is already visible in practice: visible and spectral cues jointly support maturity and stress interpretation, and geometric sensing improves phenotype and manipulation-relevant estimates that intensity images alone do not stabilize.
+
+Within the included literature we reviewed, imagery-plus-sensor fusion is the most frequently coded multimodal pattern, with a smaller but rapidly growing set of image--text and vision--language methods; narrowly coded RGB+thermal pairs remain comparatively rare as a primary label, even though thermal cues appear in several stress- and phenotyping-oriented studies. Methodologically, the corpus spans classical sensor-fusion pipelines and deep vision models through hybrid systems and, increasingly, VLM/LLM-centered stacks for monitoring, planning, and greenhouse autonomy. Concrete examples include visual--language disease monitoring for portable greenhouse devices (Visual-language transformer-based tomato leaf disease detection..., 2025), LLM/VLM-driven greenhouse robot behavior stacks (AGRI-BT robot..., 2026), and horticultural robot task planning guided by vision--language models (Visual-Language-Guided Task Planning for Horticultural Robots, 2026). These examples illustrate capability, not ubiquity: many included papers still evaluate proxy perception tasks rather than closed-loop yield or operating-cost outcomes.
+
+It is useful to read this trajectory as four overlapping generations of multimodal intelligence in CEA: (i)~unimodal perception (typically RGB deep learning for detection or grading); (ii)~explicit multisensor and multimodal fusion for stress, growth, or environment estimation; (iii)~multimodal transformers and foundation-model features that learn shared representations across heterogeneous inputs; and (iv)~agentic and embodied systems in which language models and/or vision--language--action policies participate in planning or control. The generations are not strictly chronological---fusion pipelines and deep CV methods remain active---but they clarify why ``multimodal AI for CEA'' now covers sensing, reasoning, and early forms of action rather than classification alone.
+
+% TODO: insert first-author surnames for the title/year examples above once bibliography metadata are finalized.
+
+
+\subsection{Limitations of existing surveys}
+
+Discuss how earlier surveys generally focus on one of the following:
+
+Computer vision in CEA
+IoT and greenhouse automation
+Sensor fusion for a single task such as water stress
+General multimodal agricultural learning
+Agricultural robotics
+LLM applications without physical control
+
+Prior surveys and review-style papers touching CEA or adjacent protected agriculture tend to optimize for a single slice of the stack. Computer-vision surveys emphasize detection, disease, or phenotyping pipelines, often with limited treatment of climate actuation and economics (e.g., A survey of computer vision technologies in urban and controlled-environment agriculture, 2023; Reviewing Advances in Image-Based Plant Disease Detection, 2025). IoT and greenhouse-automation reviews foreground sensing networks, control hardware, and decision-support dashboards, with comparatively less attention to modern vision--language reasoning or embodied policies (e.g., Advances in intelligent and autonomous greenhouse systems..., 2026; Key technologies and development trends of intelligent decision-making large models for facility agriculture, 2025). Task-specific multimodal fusion reviews---water stress, disease, or phenotyping---provide depth on a narrow outcome but rarely connect perception metrics to facility-level yield or cost accounting. Broader ``multimodal agriculture'' or smart-farming surveys mix open-field UAV and remote-sensing settings with CEA, which blurs constraints that are distinctive to indoor and greenhouse operations (e.g., A review of CNN applications in smart agriculture using multimodal data, 2025; UAV-Based Remote Sensing and Artificial Intelligence for Climate-Smart Agriculture..., 2026). Robotics surveys and system papers address manipulation and autonomy, yet often under-specify multimodal evaluation protocols and trustworthy deployment criteria. Finally, emerging LLM/VLM discussions in agriculture frequently stop at interpretation or recommendation interfaces without closing the loop to physical control---a gap that recent greenhouse agent/robot papers only begin to probe.
+
+Across our screened include set, these silos are reflected in coding patterns: proxy perception outcomes substantially outnumber papers with direct yield and especially direct cost evidence, and evidence type is frequently difficult to classify from abstracts alone. That distribution is not an indictment of individual studies; it is a structural limitation of a literature that has advanced sensing and models faster than standardized, decision-relevant evaluation. What remains scarce is an integrated account that jointly treats modality choice, fusion architecture, foundation-model agency, trustworthiness, and deployment systems under explicitly CEA constraints.
+
+% TODO: replace title/year survey mentions with advisor-preferred canonical surveys if a shortlist is provided.
+
+
+\subsection{Survey contributions}
+
+The paper should claim the following contributions:
+
+\begin{itemize}
+    \item A unified taxonomy spanning sensing, fusion, reasoning, control, and embodiment.
+\item An autonomy-based classification from monitoring to closed-loop robotic operation.
+\item A systematic comparison of multimodal architectures and fusion mechanisms.
+\item A dedicated analysis of foundation models, VLMs, LLM agents, and VLA policies.
+\item A benchmark taxonomy covering biological accuracy, operational utility, and safety.
+\item A roadmap toward trustworthy autonomous CEA systems.
+\end{itemize}
+
+This survey responds to those limitations with six contributions, stated here as organizing claims rather than as completed empirical results. First, we develop a unified taxonomy spanning sensing, fusion, reasoning, control, and embodiment, so that heterogeneous CEA papers can be compared on a common scaffold rather than by venue-specific task names. Second, we introduce an autonomy-oriented classification ranging from monitoring and decision support to closed-loop robotic operation, making explicit how far multimodal methods progress beyond perception. Third, we systematically compare multimodal architectures and fusion mechanisms appearing in the included corpus, with attention to what is fused and for which operational objective. Fourth, we provide a dedicated analysis of foundation-model trends in CEA---VLMs, LLM agents, and early VLA-style policies---including failure modes such as hallucination in agricultural image interpretation (Hallucination Behavior in Multimodal LLMs Across Agricultural Image Interpretation and Generation Tasks, 2026). Fifth, we outline a benchmark taxonomy that distinguishes biological accuracy, operational utility, and safety/trust criteria, motivated by the prevalence of proxy metrics in current evaluations. Sixth, we synthesize an open research roadmap toward trustworthy autonomous CEA systems, emphasizing generalization across crops and sites, data efficiency, multimodal benchmarks, and verifiable decision-to-action pipelines.
+
+We intentionally keep outcome claims conservative. While yield-oriented and system-integration studies exist in the include set, operating-cost reductions attributable to multimodal AI remain sparsely and unevenly evidenced; accordingly, this survey treats cost as a first-class question and a documented gap, not as an established empirical consensus.
+
+% TODO: align contribution wording with final section numbering once the body outline stabilizes.
+
+
+
+
+
+
+
+\newpage
+
+
 
 \section{Modality}
-\IEEEPARstart{T}{his} section will synthesize included papers by primary modality / fusion coding.
+\IEEEPARstart{T}{his} section will synthesize included papers by primary modality/fusion coding.
 Empty subsections below are placeholders for later synthesis.
 
 \begin{table}[H]
